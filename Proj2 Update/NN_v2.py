@@ -203,8 +203,11 @@ class NeuralNetwork:
 
     def backProp(self):
         Y_data = self.Y_data
-
-        error_output = self.output - Y_data
+        #print(self.output.shape)
+        #print(Y_data.shape)
+        error_output = (self.output - Y_data)*2
+        #print(error_output.shape)
+        #exit()
 
         error = [error_output]
 
@@ -284,15 +287,6 @@ class NeuralNetwork:
         output = self.feedForwardOut(X)
         return output
 
-
-n = 10000
-x = np.linspace(0, 3, n*3)
-
-def f(x):
-    return 1 + 5*x + 3*x**2
-
-y = f(x)
-
 def sigmoid(x):
     return 1/(1 + np.exp(-x))
 
@@ -313,41 +307,51 @@ def FrankeFunction(x,y):
     term4 = -0.2*np.exp(-(9*x-4)**2 - (9*y-7)**2)
     return term1 + term2 + term3 + term4
 
-def scale(X_train, X_test, z_train):
-    #Scale data and return it + mean value from target train data.
+def scale(X_train, X_test, Y_train, Y_test):
+	#Scale data and return it + mean value from target train data.
     scaler = StandardScaler()
-    #scaler = MinMaxScaler(feature_range=(-1,1))
-    print(X_train.shape)
-    X_train = X_train.reshape(1,-1).T
-    X_test = X_test.reshape(1,-1).T
-    print(X_test.shape)
-    scaler.fit(X_train)
-    X_train_ = scaler.transform(X_train)
-    X_test_ = scaler.transform(X_test)
-    z_mean_train = np.mean(z_train)
-    X_train_ = X_train.T
-    X_test_ = X_test.T
-    return X_train_, X_test_, z_mean_train
+    X_train_ = X_train.reshape(-1,1)
+    X_test_ = X_test.reshape(-1,1)
+    Y_train_ = Y_train.reshape(-1,1)
+    Y_test_ = Y_test.reshape(-1,1)
 
+    scaler.fit(X_train_)
+    X_train_ = scaler.transform(X_train_)
+    X_test_ = scaler.transform(X_test_)
+
+    scaler.fit(Y_train_)
+    Y_train_ = scaler.transform(Y_train_)
+    Y_test_ = scaler.transform(Y_test_)
+
+    return X_train_, X_test_, Y_train_, Y_test_
+
+
+
+n = 10000
+x = np.linspace(0, 10, n*3)
+
+def f(x):
+    return 1 + 5*x + 3*x**2
+
+y = f(x)
 
 X_train, X_test, Y_train, Y_test = train_test_split(x, y,test_size=1/4)
 
-X_train_, X_test_, y_mean_train = scale(X_train, X_test, Y_train)
+X_train_, X_test_, Y_train_, Y_test_ = scale(X_train, X_test, Y_train, Y_test)
 
-
-dnn = NeuralNetwork(X_train, Y_train, 3, 32, sigmoid, sigmoid_deriv, epochs = 10, eta = 0.001)
+dnn = NeuralNetwork(X_train_, Y_train_, 3, 32, sigmoid, sigmoid_deriv, epochs = 10, eta = 0.001)
 dnn.layers[-1].sigma = linear
 dnn.layers[-1].sigma_d = linear_deriv
 
-test_predict_untrained = dnn.predict(X_test)
+#test_predict_untrained = dnn.predict(X_test_)
 dnn.train()
 
-test_predict = dnn.predict(X_test)
+test_predict = dnn.predict(X_test_)
 
 
-print(test_predict.shape)
-print(Y_test.shape)
-plt.scatter(X_test, Y_test, label="Actual", c="r")
+#print(test_predict.shape)
+#print(Y_test.shape)
+plt.scatter(X_test_, Y_test_, label="Actual", c="r")
 plt.scatter(X_test_, test_predict, label="Model", alpha = 0.5)
 #plt.scatter(X_test, test_predict_untrained, label="Model_none")
 plt.legend()
