@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler, MinMaxScaler
 
 np.random.seed(12)
 
@@ -62,7 +63,7 @@ class Layer:
         self.a = a
 
 class NeuralNetwork:
-    def __init__(self, X_data, Y_data, n_layers, n_nodes, sigma, sigma_d, epochs=10, batch_size=100, eta=0.1, lmbd=0):
+    def __init__(self, X_data, Y_data, n_layers, n_nodes, sigma, sigma_d, epochs=1000, batch_size=100, eta=0.1, lmbd=0):
         if len(X_data.shape) == 2:
             self.X_data_full = X_data
         else:
@@ -84,7 +85,7 @@ class NeuralNetwork:
         #     self.n_outputs = Y_data.shape[1]
         # else:
         #     self.n_outputs = 1
-
+        print(self.n_features)
         #initializing layers
         if isinstance(n_nodes, int):
             self.layers = [Layer(self.n_features, n_nodes, sigma, sigma_d)]
@@ -200,7 +201,7 @@ class NeuralNetwork:
             layer.prevLayer.get_bias = layer.prevLayer.get_bias - self.eta*error[-1]
 
 
-    def backProp_v2(self):
+    def backProp(self):
         Y_data = self.Y_data
 
         error_output = self.output - Y_data
@@ -235,13 +236,13 @@ class NeuralNetwork:
             bias_list.append(bias)
 
         for i, layer in enumerate(reversed(self.layers)):
-            print(weights_list[i].shape)
+            #print(weights_list[i].shape)
             #print(f"b4 Layer wei shape {i}: {layer.get_weights.shape}")
             layer.get_weights = weights_list[i] - self.eta*w_grad[i]
             layer.get_bias = bias_list[i] - self.eta*bias_grad[i]
             #print(f"Layer wei shape {i}: {layer.get_weights.shape}")
 
-    def backProp(self):
+    def backProp_err(self):
         Y_data = self.Y_data
         error_output = self.output - Y_data
 
@@ -266,7 +267,7 @@ class NeuralNetwork:
 
         for i in range(self.epochs):
             for j in range(self.iterations):
-                print(f"j: {j}")
+                #print(f"j: {j}")
                 #(750,) 100
                 #print(data_indices.shape, self.batch_size)
                 chosen_data_points = np.random.choice(data_indices, size=self.batch_size, replace=False)
@@ -284,8 +285,8 @@ class NeuralNetwork:
         return output
 
 
-n = 1000
-x = np.linspace(0, 1, n)
+n = 10000
+x = np.linspace(0, 3, n*3)
 
 def f(x):
     return 1 + 5*x + 3*x**2
@@ -305,9 +306,36 @@ def linear(x):
 def linear_deriv(x):
     return 1
 
+def FrankeFunction(x,y):
+    term1 = 0.75*np.exp(-(0.25*(9*x-2)**2) - 0.25*((9*y-2)**2))
+    term2 = 0.75*np.exp(-((9*x+1)**2)/49.0 - 0.1*(9*y+1))
+    term3 = 0.5*np.exp(-(9*x-7)**2/4.0 - 0.25*((9*y-3)**2))
+    term4 = -0.2*np.exp(-(9*x-4)**2 - (9*y-7)**2)
+    return term1 + term2 + term3 + term4
+
+def scale(X_train, X_test, z_train):
+    #Scale data and return it + mean value from target train data.
+    scaler = StandardScaler()
+    #scaler = MinMaxScaler(feature_range=(-1,1))
+    print(X_train.shape)
+    X_train = X_train.reshape(1,-1).T
+    X_test = X_test.reshape(1,-1).T
+    print(X_test.shape)
+    scaler.fit(X_train)
+    X_train_ = scaler.transform(X_train)
+    X_test_ = scaler.transform(X_test)
+    z_mean_train = np.mean(z_train)
+    X_train_ = X_train.T
+    X_test_ = X_test.T
+    return X_train_, X_test_, z_mean_train
+
+
 X_train, X_test, Y_train, Y_test = train_test_split(x, y,test_size=1/4)
 
-dnn = NeuralNetwork(X_train, Y_train, 2, 32, sigmoid, sigmoid_deriv, epochs = 10, eta = 0.001)
+X_train_, X_test_, y_mean_train = scale(X_train, X_test, Y_train)
+
+
+dnn = NeuralNetwork(X_train, Y_train, 3, 32, sigmoid, sigmoid_deriv, epochs = 10, eta = 0.001)
 dnn.layers[-1].sigma = linear
 dnn.layers[-1].sigma_d = linear_deriv
 
@@ -320,7 +348,7 @@ test_predict = dnn.predict(X_test)
 print(test_predict.shape)
 print(Y_test.shape)
 plt.scatter(X_test, Y_test, label="Actual", c="r")
-plt.scatter(X_test, test_predict, label="Model", alpha = 0.5)
-plt.scatter(X_test, test_predict_untrained, label="Model_none")
+plt.scatter(X_test_, test_predict, label="Model", alpha = 0.5)
+#plt.scatter(X_test, test_predict_untrained, label="Model_none")
 plt.legend()
 plt.show()
