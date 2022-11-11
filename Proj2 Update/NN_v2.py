@@ -205,7 +205,7 @@ class NeuralNetwork:
         Y_data = self.Y_data
         #print(self.output.shape)
         #print(Y_data.shape)
-        error_output = (self.output - Y_data)*2
+        error_output = (self.output - Y_data)*2 #Dervation of OLS
         #print(error_output.shape)
         #exit()
 
