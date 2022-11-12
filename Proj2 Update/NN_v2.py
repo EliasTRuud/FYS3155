@@ -2,8 +2,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
+from sklearn.metrics import mean_squared_error, accuracy_score
 
-np.random.seed(12)
+np.random.seed(3242)
 
 class Layer:
     def __init__(self, prevLayer, n_nodes, sigma, simga_d, bias=0.1):
@@ -63,7 +64,8 @@ class Layer:
         self.a = a
 
 class NeuralNetwork:
-    def __init__(self, X_data, Y_data, n_layers, n_nodes, sigma, sigma_d, epochs=1000, batch_size=100, eta=0.1, lmbd=0):
+    def __init__(self, X_data, Y_data, n_layers, n_nodes, sigma,
+                sigma_d, epochs=100, batch_size=100, eta=0.1, lmbd=0):
         if len(X_data.shape) == 2:
             self.X_data_full = X_data
         else:
@@ -85,7 +87,7 @@ class NeuralNetwork:
         #     self.n_outputs = Y_data.shape[1]
         # else:
         #     self.n_outputs = 1
-        print(self.n_features)
+        #print(self.n_features)
         #initializing layers
         if isinstance(n_nodes, int):
             self.layers = [Layer(self.n_features, n_nodes, sigma, sigma_d)]
@@ -103,29 +105,14 @@ class NeuralNetwork:
         self.epochs = epochs
         self.batch_size = batch_size
         self.iterations = self.n_inputs // self.batch_size
-        #self.iterations  = 2000
-        self.eta = eta
+        self.eta = eta #learning rate
         self.lmbd = lmbd
+        self.mseTest = [] #stores mse for each epoch on train data.
 
     def feedForward(self):
         layer1 = self.layers[0]
         weights = layer1.get_weights
         bias = layer1.get_bias
-
-        #print(self.X_data.shape)
-        #print(weights.shape)
-        #print(bias.shape)
-        #print(np.shape(bias), np.shape(weights), np.shape(self.X_data))
-        #z = np.matmul(weights, self.X_data) + bias
-        # z = np.matmul(self.X_data, weights) + bias
-        # a = [z]
-        # layer1.get_a = z
-        # for layer in self.layers[1:]:
-        #     layer.get_z = z
-        #     al = layer.sigma(z)
-        #     layer.get_a = al
-        #     a.append(al)
-        #     z = al
 
         z = np.matmul(self.X_data, weights) + bias
         layer1.get_z = z
@@ -139,24 +126,11 @@ class NeuralNetwork:
             a.append(layer.get_a)
 
         self.output = a[-1] # (batch_size, nr_of_output_nodes=1), for regression
-        #self.a = np.array(a)
 
     def feedForwardOut(self, X):
         layer1 = self.layers[0]
         weights = layer1.get_weights
         bias = layer1.get_bias
-
-        # print(np.shape(bias), np.shape(weights), np.shape(X.T))
-        # z = np.matmul(X.T, weights) + bias
-        # print(z.shape, np.matmul(X.T, weights).shape)
-        # a = [z]
-        # layer1.get_a = z
-        # for layer in self.layers[1:]:
-        #     layer.get_z = z
-        #     al = layer.sigma(z)
-        #     layer.get_a = al
-        #     a.append(al)
-        #     z = al
 
         z = np.matmul(X, weights) + bias
         #print(z.shape, weights.shape, bias.shape)
@@ -265,14 +239,19 @@ class NeuralNetwork:
         self.layers[-2].get_bias -= self.eta * hidden_bias_gradient
 
 
-    def train(self):
+    def train(self, X_test = None, Y_test = None, calcMSE = False):
         data_indices = np.arange(self.n_inputs)
-
+        #Loop over epochs(i), with minibatches = batch_size, train network with backProp
+        k = 0
         for i in range(self.epochs):
+            if i == self.epochs-1:
+                print(f"Epochs {self.epochs}/{self.epochs}")
+                print("Done.\n")
+            if i>=k:
+                print(f"Epochs {i}/{self.epochs}")
+                k += int(self.epochs/5)
+
             for j in range(self.iterations):
-                #print(f"j: {j}")
-                #(750,) 100
-                #print(data_indices.shape, self.batch_size)
                 chosen_data_points = np.random.choice(data_indices, size=self.batch_size, replace=False)
 
                 self.X_data = self.X_data_full[chosen_data_points]
@@ -280,6 +259,13 @@ class NeuralNetwork:
 
                 self.feedForward()
                 self.backProp()
+            if calcMSE: #Per epoch calc MSE.
+                #output_outlayer = self.predict(self.X_data_full)
+                #mseT = mean_squared_error(self.Y_data_full, output_outlayer)
+                output_outlayer = self.predict(X_test)
+                mseTest_ = mean_squared_error(Y_test, output_outlayer)
+                self.mseTest.append(mseTest_)
+                #print(f"Train: {mseT}.   Test: {mseTest} diff: {abs(mseT-mseTest)}")
 
     def predict(self, X):
         if len(X.shape) == 1:
@@ -287,12 +273,42 @@ class NeuralNetwork:
         output = self.feedForwardOut(X)
         return output
 
+    def get_MSEtest(self):
+        arr_outEpochs = np.array(self.mseTest)
+        return arr_outEpochs
+
 def sigmoid(x):
     return 1/(1 + np.exp(-x))
 
 def sigmoid_deriv(x):
     sig_x  = sigmoid(x)
     return sig_x*(1 - sig_x)
+
+
+def relu(x):
+    return (np.maximum(0, x))
+
+def relu_deriv(x):
+    x_ = (x > 0) * 1
+    return x_
+
+def leaky_relu(x):
+    if x>0:
+        return x
+    else:
+        return 0.01*x
+
+def tanh_function(x):
+    z = (2/(1 + np.exp(-2*x))) -1
+    return z
+
+def tanh_deriv(x):
+    return 1 - (tanh_function(x))**2
+
+def softmax_function(x):
+    z = np.exp(x)
+    z_ = z/z.sum()
+    return z_
 
 def linear(x):
     return x
@@ -325,8 +341,6 @@ def scale(X_train, X_test, Y_train, Y_test):
 
     return X_train_, X_test_, Y_train_, Y_test_
 
-
-
 n = 10000
 x = np.linspace(0, 10, n*3)
 
@@ -339,16 +353,46 @@ X_train, X_test, Y_train, Y_test = train_test_split(x, y,test_size=1/4)
 
 X_train_, X_test_, Y_train_, Y_test_ = scale(X_train, X_test, Y_train, Y_test)
 
-dnn = NeuralNetwork(X_train_, Y_train_, 3, 32, sigmoid, sigmoid_deriv, epochs = 10, eta = 0.001)
+
+ep = 200
+
+#Sigmoid
+dnn = NeuralNetwork(X_train_, Y_train_, 2, 16, sigmoid, sigmoid_deriv, epochs = ep, eta = 0.001)
 dnn.layers[-1].sigma = linear
 dnn.layers[-1].sigma_d = linear_deriv
-
-#test_predict_untrained = dnn.predict(X_test_)
-dnn.train()
-
+dnn.train(X_test_, Y_test_, calcMSE = True)
 test_predict = dnn.predict(X_test_)
 
+#RELU
+dnn1 = NeuralNetwork(X_train_, Y_train_, 2, 16, relu, relu_deriv, epochs = ep, eta = 0.0001)
+dnn1.layers[-1].sigma = linear
+dnn1.layers[-1].sigma_d = linear_deriv
+dnn1.train(X_test_, Y_test_, calcMSE = True)
+test_predict = dnn1.predict(X_test_)
 
+
+#Tanh
+dnn2 = NeuralNetwork(X_train_, Y_train_, 2, 16, tanh_function, tanh_deriv, epochs = ep, eta = 0.0001)
+dnn2.layers[-1].sigma = linear
+dnn2.layers[-1].sigma_d = linear_deriv
+dnn2.train(X_test_, Y_test_, calcMSE = True)
+test_predict = dnn2.predict(X_test_)
+
+#MSE vs epochs on training
+mse = dnn.get_MSEtest()
+mse1 = dnn1.get_MSEtest()
+mse2 = dnn2.get_MSEtest()
+
+plt.yscale("log")
+plt.plot(np.arange(ep), mse, label = "Sigmoid lr: 0.001")
+plt.plot(np.arange(ep), mse1, label = "RELU lr: 0.0001")
+plt.plot(np.arange(ep), mse2, label = "Tanh lr: 0.0001")
+plt.legend()
+plt.title(f"Activation funcs : epochs {ep}")
+plt.savefig(f"Act funcs ep_{ep}", dpi=300)
+plt.show()
+
+"""
 #print(test_predict.shape)
 #print(Y_test.shape)
 plt.scatter(X_test_, Y_test_, label="Actual", c="r")
@@ -356,3 +400,4 @@ plt.scatter(X_test_, test_predict, label="Model", alpha = 0.5)
 #plt.scatter(X_test, test_predict_untrained, label="Model_none")
 plt.legend()
 plt.show()
+"""
