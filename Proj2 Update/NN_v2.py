@@ -80,16 +80,7 @@ class NeuralNetwork:
         self.n_inputs = self.X_data_full.shape[0]
         self.n_features = self.X_data_full.shape[1]
         self.n_outputs = self.Y_data_full.shape[1]
-        # if len(X_data.shape) == 2:
-        #     self.n_features = X_data.shape[1]
-        # else:
-        #     self.n_features = 1
 
-        # if len(X_data.shape) == 2:
-        #     self.n_outputs = Y_data.shape[1]
-        # else:
-        #     self.n_outputs = 1
-        #print(self.n_features)
         #initializing layers
         if isinstance(n_nodes, int):
             self.layers = [Layer(self.n_features, n_nodes, sigma, sigma_d)]
@@ -101,7 +92,6 @@ class NeuralNetwork:
             self.layers = [Layer(self.n_features, n_nodes[0], sigma, sigma_d)]
             for i,n in enumerate(n_nodes[1:]):
                 self.layers.append(Layer(self.layers[i-1], n, sigma, sigma_d))
-            # self.output_layer = Layer(self.layers[i-1], self.n_outputs, sigma, sigma_d)
             self.layers.append(Layer(self.layers[i-1], self.n_outputs, sigma, sigma_d))
 
         self.epochs = epochs
@@ -148,8 +138,8 @@ class NeuralNetwork:
             layer.get_z = z
             layer.get_a = layer.sigma(z)
             a.append(layer.get_a)
-
-        return z
+        return a[-1]
+        #return z
 
     def backProp_(self):
         Y_data = self.Y_data
@@ -257,7 +247,6 @@ class NeuralNetwork:
                 chosen_data_points = np.random.choice(data_indices, size=self.batch_size, replace=False)
                 self.X_data = self.X_data_full[chosen_data_points]
                 self.Y_data = self.Y_data_full[chosen_data_points]
-
                 self.feedForward()
                 self.backProp()
             if calcMSE: #Per epoch calc MSE.
@@ -359,10 +348,10 @@ X = np.array([x,z]).T
 
 X_train, X_test, Y_train, Y_test = train_test_split(X, y,test_size=1/4)
 X_train_, X_test_, Y_train_, Y_test_ = scale(X_train, X_test, Y_train, Y_test)
-ep = 300
+ep = 100
 
 #Sigmoid
-dnn = NeuralNetwork(X_train_, Y_train_, 2, 16, relu, relu_deriv, epochs = ep, eta = 0.00001)
+dnn = NeuralNetwork(X_train_, Y_train_, 2, 16, relu, relu_deriv, epochs = ep, eta = 1e-5)
 dnn.layers[-1].sigma = linear
 dnn.layers[-1].sigma_d = linear_deriv
 dnn.train(X_test_, Y_test_, calcMSE = True)
