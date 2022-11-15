@@ -61,6 +61,7 @@ class Layer:
 
 class NeuralNetwork:
     def __init__(self, X_data, Y_data, n_layers, n_nodes, sigma, sigma_d, epochs=1000, batch_size=100, eta=0.1, lmbd=0, Type="Regression"):
+        #making sure the shape of our data is correct
         if len(X_data.shape) == 2:
             self.X_data_full = X_data
         else:
@@ -73,60 +74,43 @@ class NeuralNetwork:
         self.n_inputs = self.X_data_full.shape[0]
         self.n_features = self.X_data_full.shape[1]
         self.n_outputs = self.Y_data_full.shape[1]
-        # if len(X_data.shape) == 2:
-        #     self.n_features = X_data.shape[1]
-        # else:
-        #     self.n_features = 1
 
-        # if len(X_data.shape) == 2:
-        #     self.n_outputs = Y_data.shape[1]
-        # else:
-        #     self.n_outputs = 1
-        print(self.n_features)
         #initializing layers
+        #checking if you want to have a different amount of nodes per layer
         if isinstance(n_nodes, int) or isinstance(n_nodes, np.int32):
+            #first layer is initialized a bit differently
             self.layers = [Layer(self.n_features, n_nodes, sigma, sigma_d)]
             for i in range(1, n_layers):
                 self.layers.append(Layer(self.layers[i-1], n_nodes, sigma, sigma_d))
-            # self.output_layer = Layer(self.layers[i-1], self.n_outputs, sigma, sigma_d)
+            #output layer is also initialized differently
             self.layers.append(Layer(self.layers[n_layers-1], self.n_outputs, sigma, sigma_d))
         else:
+            #same thing only with custom nodes per layer
             self.layers = [Layer(self.n_features, n_nodes[0], sigma, sigma_d)]
             for i,n in enumerate(n_nodes[1:]):
-                self.layers.append(Layer(self.layers[i-1], n, sigma, sigma_d))
-            # self.output_layer = Layer(self.layers[i-1], self.n_outputs, sigma, sigma_d)
-            self.layers.append(Layer(self.layers[i-1], self.n_outputs, sigma, sigma_d))
+                self.layers.append(Layer(self.layers[i], n, sigma, sigma_d))
+                
+            self.layers.append(Layer(self.layers[i], self.n_outputs, sigma, sigma_d))
 
+        #taken from lecture notes
         self.epochs = epochs
         self.batch_size = batch_size
         self.iterations = self.n_inputs // self.batch_size
-        #self.iterations  = 2000
         self.eta = eta
         self.lmbd = lmbd
 
+        #saving what kind of problem we have for later
         self.Type = Type
 
+    #feeds the input data forward
     def feedForward(self):
+        #1st layer works a bit differently
         layer1 = self.layers[0]
         weights = layer1.get_weights
         bias = layer1.get_bias
 
-        #print(self.X_data.shape)
-        #print(weights.shape)
-        #print(bias.shape)
-        #print(np.shape(bias), np.shape(weights), np.shape(self.X_data))
-        #z = np.matmul(weights, self.X_data) + bias
-        # z = np.matmul(self.X_data, weights) + bias
-        # a = [z]
-        # layer1.get_a = z
-        # for layer in self.layers[1:]:
-        #     layer.get_z = z
-        #     al = layer.sigma(z)
-        #     layer.get_a = al
-        #     a.append(al)
-        #     z = al
-
         z = np.matmul(self.X_data, weights) + bias
+        #we want to be able to access these values at later points
         layer1.get_z = z
         layer1.get_a = layer1.sigma(z)
         a = [layer1.get_a]
@@ -138,24 +122,12 @@ class NeuralNetwork:
             a.append(layer.get_a)
 
         self.output = a[-1] # (batch_size, nr_of_output_nodes=1), for regression
-        #self.a = np.array(a)
 
+    #does the same as feedForward, only it takes a input and returns a value instead
     def feedForwardOut(self, X):
         layer1 = self.layers[0]
         weights = layer1.get_weights
         bias = layer1.get_bias
-
-        # print(np.shape(bias), np.shape(weights), np.shape(X.T))
-        # z = np.matmul(X.T, weights) + bias
-        # print(z.shape, np.matmul(X.T, weights).shape)
-        # a = [z]
-        # layer1.get_a = z
-        # for layer in self.layers[1:]:
-        #     layer.get_z = z
-        #     al = layer.sigma(z)
-        #     layer.get_a = al
-        #     a.append(al)
-        #     z = al
 
         z = np.matmul(X, weights) + bias
         #print(z.shape, weights.shape, bias.shape)
@@ -174,39 +146,17 @@ class NeuralNetwork:
 
         return z
 
-    def backProp_(self):
-        Y_data = self.Y_data
-
-        error_output = self.output - Y_data
-        #print(error_output.shape)
-        error = [error_output]
-
-        # gradients for the output layer
-        out_layer = self.layers[-1]
-        out_weights_grad = np.matmul(layer.prevLayer.get_a.T, error_output)
-
-        out_layer.get_weights = out_layer.get_weights - out_weights_grad
-        out_layer.get_bias = layer.prevLayer.get_bias - self.eta*error_output
-
-        #going through backwards
-        for layer in reversed(self.layers[1:]):
-            sigma_der = layer.prevLayer.sigma_d(layer.prevLayer.get_z)
-            error.append(np.matmul(error[-1], layer.get_weights.T)*sigma_der)
-            #error.append(np.sum(error[-1]*layer.prevLayer.get_weights*layer.sigma_d(layer.get_z))) #, axis=?
-            #weights_grad = self.eta*np.matmul(error[-1].T, layer.prevLayer.get_a)
-            #or
-            weights_grad = self.eta*np.matmul(layer.prevLayer.get_a.T, error[-1])
-            layer.prevLayer.get_weights = layer.prevLayer.get_weights - weights_grad
-            layer.prevLayer.get_bias = layer.prevLayer.get_bias - self.eta*error[-1]
-
-
+    #performs the back propagation
     def backProp(self):
         Y_data = self.Y_data
 
+        #cost function
         error_output = self.output - Y_data
 
+        #want to be able to easily access all these data later
         error = [error_output]
-
+        #again, the first layer is handled a bit differently
+        #we also initialize our lists of values for later use
         outLayer = self.layers[-1]
         w_grad_output = np.matmul(outLayer.prevLayer.get_a.T, error_output)
         w_grad = [w_grad_output]
@@ -225,6 +175,7 @@ class NeuralNetwork:
             error.append(np.matmul(error[-1], layer.get_weights.T)*sigma_d(layer.prevLayer.get_z))
 
             ah = layer.prevLayer.get_a
+            #our first hidden layer is defined a bit differently
             if isinstance(layer.prevLayer.prevLayer, int):
                 ah = self.X_data
             w_grad.append(np.matmul(ah.T, error[-1]))
@@ -235,14 +186,12 @@ class NeuralNetwork:
             bias_list.append(bias)
 
         
-
+        #update our gradients, with learning rate and regularization parameter
         for i, layer in enumerate(reversed(self.layers)):
-            #print(weights_list[i].shape)
-            #print(f"b4 Layer wei shape {i}: {layer.get_weights.shape}")
             layer.get_weights = weights_list[i] - self.eta*w_grad[i] + self.lmbd*weights_list[i]
             layer.get_bias = bias_list[i] - self.eta*bias_grad[i]
-            #print(f"Layer wei shape {i}: {layer.get_weights.shape}")
 
+    #calculates MSE throughout train. usefull for debugging
     def backProp_err(self):
         Y_data = self.Y_data
         error_output = self.output - Y_data
@@ -262,15 +211,13 @@ class NeuralNetwork:
         self.layers[-2].get_weights -= self.eta * hidden_weights_gradient
         self.layers[-2].get_bias -= self.eta * hidden_bias_gradient
 
-
+    #taken from lecture notes
+    #traiins the network
     def train(self):
         data_indices = np.arange(self.n_inputs)
 
         for i in range(self.epochs):
             for j in range(self.iterations):
-                #print(f"j: {j}")
-                #(750,) 100
-                #print(data_indices.shape, self.batch_size)
                 chosen_data_points = np.random.choice(data_indices, size=self.batch_size, replace=False)
 
                 self.X_data = self.X_data_full[chosen_data_points]
@@ -279,21 +226,29 @@ class NeuralNetwork:
                 self.feedForward()
                 self.backProp()
 
+    #predicts
     def predict(self, X):
+        #again we have to reshape our data
         if len(X.shape) == 1:
             X = X.reshape(-1, 1)
         output = self.feedForwardOut(X)
-        if self.Type == "Regression":
-            return output
-        elif self.Type == "Classification":
-            return np.argmax(output, axis=1)
+        return output
 
+    #only used for clasification problems
     def evaluate(self, X, Y):
-        prediction = self.predict(X)
-        #print(prediction.shape, Y.shape)
-        Y = np.argmax(Y, axis=1)
-        prediction = np.argmax(prediction, axis=1)
-        #Y = to_categorical_numpy(np.copy(Y))
+        Y = np.copy(Y)
+        if self.Type == "Regression":
+            if len(X.shape) == 1:
+                X = X.reshape(-1, 1)
+            output = self.feedForwardOut(X)
+            output = output[~np.isnan(output)]
+            Y = Y[~np.isnan(output)]
+            return R2(Y, output)
+        elif self.Type == "Classification":
+            prediction = self.predict(X)
+            
+            #convert back from one-hot vectors
+            Y = np.argmax(Y, axis=1)
+            prediction = np.argmax(prediction, axis=1)
 
-        #prediction = to_categorical_numpy(prediction)
-        return accuracy_score(Y, prediction)
+            return accuracy_score(Y, prediction)

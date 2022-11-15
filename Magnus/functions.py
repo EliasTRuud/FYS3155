@@ -2,8 +2,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import accuracy_score, r2_score
 
+#different activation function
 def sigmoid(x):
     return 1/(1 + np.exp(-x))
 
@@ -16,6 +17,12 @@ def tanh(x):
 
 def tanh_deriv(x):
     return 1 - tanh(x)**2
+
+def RELU(x):
+    return np.maximum(0, x)
+
+def RELU_deriv(x):
+    return (x > 0)*1
 
 def elu(x, alpha=0.01):
     xexp = np.exp(x)
@@ -30,6 +37,11 @@ def linear(x):
 def linear_deriv(x):
     return 1
 
+def softmax(z):
+    exp_term = np.exp(z)
+    return exp_term/np.sum(exp_term, axis=1, keepdims=True)
+
+#some functions used to generate data
 def f(x):
     return 1 + 5*x + 3*x**2
 
@@ -40,6 +52,7 @@ def FrankeFunction(x,y):
     term4 = -0.2*np.exp(-(9*x-4)**2 - (9*y-7)**2)
     return term1 + term2 + term3 + term4
 
+#In case we want to scale our data
 def scale(X_train, X_test, z_train):
     #Scale data and return it + mean value from target train data.
     scaler = StandardScaler()
@@ -61,11 +74,12 @@ def MSE(y_data,y_model):
 #     print(y_data.shape, y_model.shape)
     return np.sum((y_data-y_model)**2)/n
 
-def softmax(z):
-    exp_term = np.exp(z)
-    return exp_term/np.sum(exp_term, axis=1, keepdims=True)
+def R2(y_data, y_model):
+    return 1 - np.sum((y_data - y_model)**2) / np.sum((y_data - np.mean(y_data)) ** 2)
 
-def plot_data(x,y,data,title=None):
+#taken from lecture notes, slightly modifed to work for regularization parameters
+#instead of n_neurons
+def plot_data(x,y,data,title=None, Type="Classification"):
 
     # plot results
     fontsize=16
@@ -76,15 +90,28 @@ def plot_data(x,y,data,title=None):
     cax = ax.matshow(data, interpolation='nearest', vmin=0, vmax=1)
     
     cbar=fig.colorbar(cax)
-    cbar.ax.set_ylabel('accuracy (%)',rotation=90,fontsize=fontsize)
-    cbar.set_ticks([0,.2,.4,0.6,0.8,1.0])
-    cbar.set_ticklabels(['0%','20%','40%','60%','80%','100%'])
+    
 
     # put text on matrix elements
-    for i, x_val in enumerate(np.arange(len(x))):
-        for j, y_val in enumerate(np.arange(len(y))):
-            c = "${0:.1f}\\%$".format( 100*data[j,i])  
-            ax.text(x_val, y_val, c, va='center', ha='center')
+    if Type == "Classification":
+        cbar.ax.set_ylabel('accuracy (%)',rotation=90,fontsize=fontsize)
+        cbar.set_ticks([0,.2,.4,0.6,0.8,1.0])
+        cbar.set_ticklabels(['0%','20%','40%','60%','80%','100%'])
+        for i, x_val in enumerate(np.arange(len(x))):
+            for j, y_val in enumerate(np.arange(len(y))):
+                c = "${0:.1f}\\%$".format( 100*data[j,i])  
+                ax.text(x_val, y_val, c, va='center', ha='center')
+    elif Type == "Regression":
+        cbar.ax.set_ylabel('R2 score',rotation=90,fontsize=fontsize)
+        cbar.set_ticks([0,.2,.4,0.6,0.8,1.0])
+        cbar.set_ticklabels(['<0','0.2','0.4','0.6','0.8','1'])
+        for i, x_val in enumerate(np.arange(len(x))):
+            for j, y_val in enumerate(np.arange(len(y))):
+                if data[j,i] < 0:
+                    c = "$<0$"
+                else:
+                    c = "${0:.3f}$".format(data[j,i])  
+                ax.text(x_val, y_val, c, va='center', ha='center')
 
     # convert axis vaues to to string labels
     x=[str(i) for i in x]
