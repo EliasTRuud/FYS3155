@@ -141,31 +141,6 @@ class NeuralNetwork:
         return a[-1]
         #return z
 
-    def backProp_(self):
-        Y_data = self.Y_data
-
-        error_output = self.output - Y_data
-        #print(error_output.shape)
-        error = [error_output]
-
-        # gradients for the output layer
-        out_layer = self.layers[-1]
-        out_weights_grad = np.matmul(layer.prevLayer.get_a.T, error_output)
-
-        outlayer.get_weights = out_layer.get_weights - output_weights_gradient
-        out_layer.get_bias = layer.prevLayer.get_bias - self.eta*error_output
-
-        #going through backwards
-        for layer in reversed(self.layers[1:]):
-            sigma_der = layer.prevLayer.sigma_d(layer.prevLayer.get_z)
-            error.append(np.matmul(error[-1], layer.get_weights.T)*sigma_der)
-            #error.append(np.sum(error[-1]*layer.prevLayer.get_weights*layer.sigma_d(layer.get_z))) #, axis=?
-            #weights_grad = self.eta*np.matmul(error[-1].T, layer.prevLayer.get_a)
-            #or
-            weights_grad = self.eta*np.matmul(layer.prevLayer.get_a.T, error[-1])
-            layer.prevLayer.get_weights = layer.prevLayer.get_weights - weights_grad
-            layer.prevLayer.get_bias = layer.prevLayer.get_bias - self.eta*error[-1]
-
 
     def backProp(self):
         Y_data = self.Y_data
@@ -210,26 +185,6 @@ class NeuralNetwork:
             layer.get_weights = weights_list[i] - self.eta*w_grad[i]
             layer.get_bias = bias_list[i] - self.eta*bias_grad[i]
             #print(f"Layer wei shape {i}: {layer.get_weights.shape}")
-
-    def backProp_err(self):
-        Y_data = self.Y_data
-        error_output = self.output - Y_data
-
-        outLayer = self.layers[-1]
-
-        error_hidden = np.matmul(error_output, outLayer.get_weights.T) * outLayer.get_a * (1 - outLayer.get_a)
-
-        output_weights_gradient = np.matmul(outLayer.prevLayer.get_a.T, error_output)
-        output_bias_gradient = np.sum(error_output, axis=0)
-
-        hidden_weights_gradient = np.matmul(self.X_data.T, error_hidden)
-        hidden_bias_gradient = np.sum(error_hidden, axis=0)
-
-        outLayer.get_weights -= self.eta * output_weights_gradient
-        outLayer.get_bias -= self.eta * output_bias_gradient
-        self.layers[-2].get_weights -= self.eta * hidden_weights_gradient
-        self.layers[-2].get_bias -= self.eta * hidden_bias_gradient
-
 
     def train(self, X_test = None, Y_test = None, calcMSE = False):
         data_indices = np.arange(self.n_inputs)

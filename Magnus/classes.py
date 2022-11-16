@@ -3,7 +3,7 @@ from functions import *
 np.random.seed(12)
 
 class Layer:
-    def __init__(self, prevLayer, n_nodes, sigma, simga_d, bias=0.1):
+    def __init__(self, prevLayer, n_nodes, sigma, simga_d, bias=0):
         self.n_nodes = n_nodes
         self.prevLayer = prevLayer
 
@@ -19,7 +19,7 @@ class Layer:
         self.sigma_d = simga_d
 
     def init_weights(self):
-        self.weights = np.random.randn(self.n_weights, self.n_nodes)
+        self.weights = np.random.randn(self.n_weights, self.n_nodes)*0.001
 
     def init_bias(self, bias):
         self.bias = np.zeros(self.n_nodes) + bias
@@ -89,7 +89,7 @@ class NeuralNetwork:
             self.layers = [Layer(self.n_features, n_nodes[0], sigma, sigma_d)]
             for i,n in enumerate(n_nodes[1:]):
                 self.layers.append(Layer(self.layers[i], n, sigma, sigma_d))
-                
+
             self.layers.append(Layer(self.layers[i], self.n_outputs, sigma, sigma_d))
 
         #taken from lecture notes
@@ -185,11 +185,11 @@ class NeuralNetwork:
             weights_list.append(weights)
             bias_list.append(bias)
 
-        
+
         #update our gradients, with learning rate and regularization parameter
         for i, layer in enumerate(reversed(self.layers)):
-            layer.get_weights = weights_list[i] - self.eta*w_grad[i] + self.lmbd*weights_list[i]
-            layer.get_bias = bias_list[i] - self.eta*bias_grad[i]
+            layer.get_weights = weights_list[i] - self.eta*(w_grad[i] + 2*self.lmbd*weights_list[i])
+            layer.get_bias = bias_list[i] - self.eta*(bias_grad[i] + 2*self.lmbd*bias_list[i])
 
     #calculates MSE throughout train. usefull for debugging
     def backProp_err(self):
@@ -246,7 +246,7 @@ class NeuralNetwork:
             return R2(Y, output)
         elif self.Type == "Classification":
             prediction = self.predict(X)
-            
+
             #convert back from one-hot vectors
             Y = np.argmax(Y, axis=1)
             prediction = np.argmax(prediction, axis=1)
