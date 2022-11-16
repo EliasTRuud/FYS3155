@@ -1,6 +1,6 @@
 from functions import *
 
-np.random.seed(12)
+
 
 class Layer:
     def __init__(self, prevLayer, n_nodes, sigma, simga_d, bias=0):
@@ -19,7 +19,7 @@ class Layer:
         self.sigma_d = simga_d
 
     def init_weights(self):
-        self.weights = np.random.randn(self.n_weights, self.n_nodes)*0.001
+        self.weights = np.random.randn(self.n_weights, self.n_nodes) + 0.001
 
     def init_bias(self, bias):
         self.bias = np.zeros(self.n_nodes) + bias
@@ -61,6 +61,7 @@ class Layer:
 
 class NeuralNetwork:
     def __init__(self, X_data, Y_data, n_layers, n_nodes, sigma, sigma_d, epochs=1000, batch_size=100, eta=0.1, lmbd=0, Type="Regression"):
+        np.random.seed(seed)
         #making sure the shape of our data is correct
         if len(X_data.shape) == 2:
             self.X_data_full = X_data
@@ -89,7 +90,7 @@ class NeuralNetwork:
             self.layers = [Layer(self.n_features, n_nodes[0], sigma, sigma_d)]
             for i,n in enumerate(n_nodes[1:]):
                 self.layers.append(Layer(self.layers[i], n, sigma, sigma_d))
-
+                
             self.layers.append(Layer(self.layers[i], self.n_outputs, sigma, sigma_d))
 
         #taken from lecture notes
@@ -143,8 +144,8 @@ class NeuralNetwork:
             layer.get_z = z
             layer.get_a = layer.sigma(z)
             a.append(layer.get_a)
-
-        return z
+            
+        return a[-1]
 
     #performs the back propagation
     def backProp(self):
@@ -185,11 +186,11 @@ class NeuralNetwork:
             weights_list.append(weights)
             bias_list.append(bias)
 
-
+        
         #update our gradients, with learning rate and regularization parameter
         for i, layer in enumerate(reversed(self.layers)):
-            layer.get_weights = weights_list[i] - self.eta*(w_grad[i] + 2*self.lmbd*weights_list[i])
-            layer.get_bias = bias_list[i] - self.eta*(bias_grad[i] + 2*self.lmbd*bias_list[i])
+            layer.get_weights = weights_list[i] - self.eta*w_grad[i] + 2*self.lmbd*weights_list[i]
+            layer.get_bias = bias_list[i] - self.eta*bias_grad[i] + 2*self.lmbd*bias_list[i]
 
     #calculates MSE throughout train. usefull for debugging
     def backProp_err(self):
@@ -213,18 +214,34 @@ class NeuralNetwork:
 
     #taken from lecture notes
     #traiins the network
-    def train(self):
+    def train(self, X_test = None, Y_test = None, calcMSE = False):
+        if calcMSE:
+            self.mseTest = [] #stores mse for each epoch on train data.
         data_indices = np.arange(self.n_inputs)
-
+        #Loop over epochs(i), with minibatches = batch_size, train network with backProp
+        k = 0
         for i in range(self.epochs):
+            if i == self.epochs-1:
+                print(f"Epochs {self.epochs}/{self.epochs}")
+                print("Done.\n")
+            if i>=k:
+                print(f"Epochs {i}/{self.epochs}")
+                k += int(self.epochs/5)
+
             for j in range(self.iterations):
                 chosen_data_points = np.random.choice(data_indices, size=self.batch_size, replace=False)
-
                 self.X_data = self.X_data_full[chosen_data_points]
                 self.Y_data = self.Y_data_full[chosen_data_points]
 
                 self.feedForward()
                 self.backProp()
+            if calcMSE: #Per epoch calc MSE.
+                #output_outlayer = self.predict(self.X_data_full)
+                #mseT = mean_squared_error(self.Y_data_full, output_outlayer)
+                output_outlayer = self.predict(X_test)
+                mseTest_ = mean_squared_error(Y_test, output_outlayer)
+                self.mseTest.append(mseTest_)
+                #print(f"Train: {mseT}.   Test: {mseTest} diff: {abs(mseT-mseTest)}")
 
     #predicts
     def predict(self, X):
@@ -235,7 +252,7 @@ class NeuralNetwork:
         return output
 
     #only used for clasification problems
-    def evaluate(self, X, Y):
+    def evaluate(self, X, Y, Onehot=True):
         Y = np.copy(Y)
         if self.Type == "Regression":
             if len(X.shape) == 1:
@@ -246,9 +263,16 @@ class NeuralNetwork:
             return R2(Y, output)
         elif self.Type == "Classification":
             prediction = self.predict(X)
-
+            
             #convert back from one-hot vectors
-            Y = np.argmax(Y, axis=1)
-            prediction = np.argmax(prediction, axis=1)
+            if Onehot:
+                Y = np.argmax(Y, axis=1)
+                prediction = np.argmax(prediction, axis=1)
 
+            prediction = prediction[~np.isnan(prediction)]
+            Y = Y[~np.isnan(prediction)]
             return accuracy_score(Y, prediction)
+
+    def get_MSEtest(self):
+        arr_outEpochs = np.array(self.mseTest)
+        return arr_outEpochs

@@ -2,8 +2,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
-from sklearn.metrics import accuracy_score, r2_score
+from sklearn.metrics import accuracy_score, mean_squared_error
 
+seed = 32455
 #different activation function
 def sigmoid(x):
     return 1/(1 + np.exp(-x))
@@ -19,10 +20,11 @@ def tanh_deriv(x):
     return 1 - tanh(x)**2
 
 def RELU(x):
-    return np.maximum(0, x)
+    return (np.maximum(0, x))
 
 def RELU_deriv(x):
-    return (x > 0)*1
+    x_ = (x > 0) * 1
+    return x_
 
 def elu(x, alpha=0.01):
     xexp = np.exp(x)
@@ -53,21 +55,27 @@ def FrankeFunction(x,y):
     return term1 + term2 + term3 + term4
 
 #In case we want to scale our data
-def scale(X_train, X_test, z_train):
-    #Scale data and return it + mean value from target train data.
+def scale(X_train, X_test, Y_train, Y_test):
+	#Scale data and return it
     scaler = StandardScaler()
-    #scaler = MinMaxScaler(feature_range=(-1,1))
-    print(X_train.shape)
-    X_train = X_train.reshape(1,-1).T
-    X_test = X_test.reshape(1,-1).T
-    print(X_test.shape)
-    scaler.fit(X_train)
-    X_train_ = scaler.transform(X_train)
-    X_test_ = scaler.transform(X_test)
-    z_mean_train = np.mean(z_train)
-    X_train_ = X_train.T
-    X_test_ = X_test.T
-    return X_train_, X_test_, z_mean_train
+    if len(X_train.shape) < 1:
+        X_train_ = X_train.reshape(-1,1)
+        X_test_ = X_test.reshape(-1,1)
+    else:
+        X_train_ = X_train
+        X_test_ = X_test
+    Y_train_ = Y_train.reshape(-1,1)
+    Y_test_ = Y_test.reshape(-1,1)
+
+    scaler.fit(X_train_)
+    X_train_ = scaler.transform(X_train_)
+    X_test_ = scaler.transform(X_test_)
+
+    scaler.fit(Y_train_)
+    Y_train_ = scaler.transform(Y_train_)
+    Y_test_ = scaler.transform(Y_test_)
+
+    return X_train_, X_test_, Y_train_, Y_test_
 
 def MSE(y_data,y_model):
     n = np.size(y_model)
