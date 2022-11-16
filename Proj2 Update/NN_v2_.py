@@ -128,8 +128,8 @@ class LinRegClass:
         weights_ = outLayer.get_weights
         bias_ = outLayer.get_bias
 
-        outLayer.get_weights = weights_ - self.eta*w_grad
-        outLayer.get_bias = bias_ - self.eta*bias_grad
+        outLayer.get_weights = weights_ - self.eta*(w_grad + self.lmbd*weights_*2)
+        outLayer.get_bias = bias_ - self.eta*(bias_grad + self.lmbd*bias_*2)
 
 
 
@@ -248,7 +248,7 @@ X_train_, X_test_, Y_train_, Y_test_ = scale(X_train, X_test, Y_train, Y_test)
 
 ep = 300
 
-dnn = LinRegClass(X_train, Y_train, sigmoid, sigmoid_deriv, epochs = ep, eta = 0.001)
+dnn = LinRegClass(X_train, Y_train, sigmoid, sigmoid_deriv, epochs = ep, eta = 0.00001, lmbd=0)
 dnn.layers[-1].sigma = sigmoid
 dnn.layers[-1].sigma_d = sigmoid_deriv
 dnn.train(X_train, Y_train, calcAccuracy=True)
