@@ -237,7 +237,7 @@ def scale(X_train, X_test, Y_train, Y_test):
 
 
 from sklearn.datasets import make_blobs
-X,y=make_blobs(n_samples=2000,n_features=2,centers=2,random_state=6,cluster_std=1.3)
+X,y=make_blobs(n_samples=200,n_features=2,centers=2,random_state=6,cluster_std=1.3)
 #plt.scatter(X, y)
 #plt.show()
 
@@ -248,7 +248,7 @@ X_train_, X_test_, Y_train_, Y_test_ = scale(X_train, X_test, Y_train, Y_test)
 
 ep = 300
 
-dnn = LinRegClass(X_train, Y_train, sigmoid, sigmoid_deriv, epochs = ep, eta = 0.00001)
+dnn = LinRegClass(X_train, Y_train, sigmoid, sigmoid_deriv, epochs = ep, eta = 0.001)
 dnn.layers[-1].sigma = sigmoid
 dnn.layers[-1].sigma_d = sigmoid_deriv
 dnn.train(X_train, Y_train, calcAccuracy=True)
