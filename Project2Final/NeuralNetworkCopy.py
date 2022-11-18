@@ -1,14 +1,9 @@
-import numpy as np
-import matplotlib.pyplot as plt
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler, MinMaxScaler
-from sklearn.metrics import mean_squared_error, accuracy_score
+from functions import *
+
 
 seed = 32455
-np.random.seed(seed)
-
 class Layer:
-    def __init__(self, prevLayer, n_nodes, sigma, simga_d, bias=0.1):
+    def __init__(self, prevLayer, n_nodes, sigma, simga_d, bias=0):
         self.n_nodes = n_nodes
         self.prevLayer = prevLayer
 
@@ -30,7 +25,7 @@ class Layer:
         self.bias = np.zeros(self.n_nodes) + bias
 
     def __str__(self):
-        return f"{self.z.shape}, {self.weights.shape}, {self.bias.shape}"
+        return f"{self.weights.shape}, {self.bias.shape}"
 
     @property
     def get_bias(self):
@@ -66,7 +61,9 @@ class Layer:
 
 class NeuralNetwork:
     def __init__(self, X_data, Y_data, n_layers, n_nodes, sigma,
-                sigma_d, epochs=100, batch_size=100, eta=0.1, lmbd=0):
+                sigma_d, epochs=1000, batch_size=100, eta=0.1, lmbd=0, type="Regression"):
+        np.random.seed(seed)
+        #making sure the shape of our data is correct
         if len(X_data.shape) == 2:
             self.X_data_full = X_data
         else:
@@ -76,37 +73,49 @@ class NeuralNetwork:
         else:
             self.Y_data_full = Y_data.reshape(-1, 1)
 
-        np.random.seed(seed)
         self.n_inputs = self.X_data_full.shape[0]
         self.n_features = self.X_data_full.shape[1]
         self.n_outputs = self.Y_data_full.shape[1]
 
         #initializing layers
-        if isinstance(n_nodes, int):
+        #checking if you want to have a different amount of nodes per layer
+        if isinstance(n_nodes, int) or isinstance(n_nodes, np.int32):
+            #first layer is initialized a bit differently
             self.layers = [Layer(self.n_features, n_nodes, sigma, sigma_d)]
             for i in range(1, n_layers):
                 self.layers.append(Layer(self.layers[i-1], n_nodes, sigma, sigma_d))
-            # self.output_layer = Layer(self.layers[i-1], self.n_outputs, sigma, sigma_d)
+            #output layer is also initialized differently
             self.layers.append(Layer(self.layers[n_layers-1], self.n_outputs, sigma, sigma_d))
         else:
+            #same thing only with custom nodes per layer
             self.layers = [Layer(self.n_features, n_nodes[0], sigma, sigma_d)]
             for i,n in enumerate(n_nodes[1:]):
-                self.layers.append(Layer(self.layers[i-1], n, sigma, sigma_d))
-            self.layers.append(Layer(self.layers[i-1], self.n_outputs, sigma, sigma_d))
+                self.layers.append(Layer(self.layers[i], n, sigma, sigma_d))
 
+            self.layers.append(Layer(self.layers[i], self.n_outputs, sigma, sigma_d))
+
+        #taken from lecture notes
         self.epochs = epochs
         self.batch_size = batch_size
         self.iterations = self.n_inputs // self.batch_size
-        self.eta = eta #learning rate
+        self.eta = eta
         self.lmbd = lmbd
         self.mseTest = [] #stores mse for each epoch on train data.
+        self.mseTrain = [] #stores mse for each epoch on train data.
+        self.accuracyTest = []
+        self.accuracyTrain = []
+        #saving what kind of problem we have for later
+        self.Type = type
 
+    #feeds the input data forward
     def feedForward(self):
+        #1st layer works a bit differently
         layer1 = self.layers[0]
         weights = layer1.get_weights
         bias = layer1.get_bias
 
         z = np.matmul(self.X_data, weights) + bias
+        #we want to be able to access these values at later points
         layer1.get_z = z
         layer1.get_a = layer1.sigma(z)
         a = [layer1.get_a]
@@ -119,6 +128,7 @@ class NeuralNetwork:
 
         self.output = a[-1] # (batch_size, nr_of_output_nodes=1), for regression
 
+    #does the same as feedForward, only it takes a input and returns a value instead
     def feedForwardOut(self, X):
         layer1 = self.layers[0]
         weights = layer1.get_weights
@@ -138,20 +148,20 @@ class NeuralNetwork:
             layer.get_z = z
             layer.get_a = layer.sigma(z)
             a.append(layer.get_a)
+
         return a[-1]
-        #return z
 
-
+    #performs the back propagation
     def backProp(self):
         Y_data = self.Y_data
-        #print(self.output.shape)
-        #print(Y_data.shape)
-        error_output = (self.output - Y_data)*2 #Dervation of OLS
-        #print(error_output.shape)
-        #exit()
 
+        #cost function
+        error_output = self.output - Y_data
+
+        #want to be able to easily access all these data later
         error = [error_output]
-
+        #again, the first layer is handled a bit differently
+        #we also initialize our lists of values for later use
         outLayer = self.layers[-1]
         w_grad_output = np.matmul(outLayer.prevLayer.get_a.T, error_output)
         w_grad = [w_grad_output]
@@ -170,6 +180,7 @@ class NeuralNetwork:
             error.append(np.matmul(error[-1], layer.get_weights.T)*sigma_d(layer.prevLayer.get_z))
 
             ah = layer.prevLayer.get_a
+            #our first hidden layer is defined a bit differently
             if isinstance(layer.prevLayer.prevLayer, int):
                 ah = self.X_data
             w_grad.append(np.matmul(ah.T, error[-1]))
@@ -179,14 +190,37 @@ class NeuralNetwork:
             weights_list.append(weights)
             bias_list.append(bias)
 
-        for i, layer in enumerate(reversed(self.layers)):
-            #print(weights_list[i].shape)
-            #print(f"b4 Layer wei shape {i}: {layer.get_weights.shape}")
-            layer.get_weights = weights_list[i] - self.eta*w_grad[i]
-            layer.get_bias = bias_list[i] - self.eta*bias_grad[i]
-            #print(f"Layer wei shape {i}: {layer.get_weights.shape}")
 
+        #update our gradients, with learning rate and regularization parameter
+        for i, layer in enumerate(reversed(self.layers)):
+            layer.get_weights = weights_list[i] - self.eta*w_grad[i] + 2*self.lmbd*weights_list[i]
+            layer.get_bias = bias_list[i] - self.eta*bias_grad[i] + 2*self.lmbd*bias_list[i]
+
+    #calculates MSE throughout train. usefull for debugging
+    def backProp_err(self):
+        Y_data = self.Y_data
+        error_output = self.output - Y_data
+
+        outLayer = self.layers[-1]
+
+        error_hidden = np.matmul(error_output, outLayer.get_weights.T) * outLayer.get_a * (1 - outLayer.get_a)
+
+        output_weights_gradient = np.matmul(outLayer.prevLayer.get_a.T, error_output)
+        output_bias_gradient = np.sum(error_output, axis=0)
+
+        hidden_weights_gradient = np.matmul(self.X_data.T, error_hidden)
+        hidden_bias_gradient = np.sum(error_hidden, axis=0)
+
+        outLayer.get_weights -= self.eta * output_weights_gradient
+        outLayer.get_bias -= self.eta * output_bias_gradient
+        self.layers[-2].get_weights -= self.eta * hidden_weights_gradient
+        self.layers[-2].get_bias -= self.eta * hidden_bias_gradient
+
+    #taken from lecture notes
+    #traiins the network
     def train(self, X_test = None, Y_test = None, calcMSE = False):
+        if calcMSE:
+            self.mseTest = [] #stores mse for each epoch on train data.
         data_indices = np.arange(self.n_inputs)
         #Loop over epochs(i), with minibatches = batch_size, train network with backProp
         k = 0
@@ -202,6 +236,7 @@ class NeuralNetwork:
                 chosen_data_points = np.random.choice(data_indices, size=self.batch_size, replace=False)
                 self.X_data = self.X_data_full[chosen_data_points]
                 self.Y_data = self.Y_data_full[chosen_data_points]
+
                 self.feedForward()
                 self.backProp()
             if calcMSE: #Per epoch calc MSE.
@@ -212,149 +247,40 @@ class NeuralNetwork:
                 self.mseTest.append(mseTest_)
                 #print(f"Train: {mseT}.   Test: {mseTest} diff: {abs(mseT-mseTest)}")
 
+    #predicts
     def predict(self, X):
+        #again we have to reshape our data
         if len(X.shape) == 1:
             X = X.reshape(-1, 1)
         output = self.feedForwardOut(X)
         return output
 
+    #only used for clasification problems
+    def evaluate(self, X, Y, Onehot=True):
+        Y = np.copy(Y)
+        if self.Type == "Regression":
+            if len(X.shape) == 1:
+                X = X.reshape(-1, 1)
+            output = self.feedForwardOut(X)
+            output = output[~np.isnan(output)]
+            Y = Y[~np.isnan(output)]
+            return R2(Y, output)
+        elif self.Type == "Classification":
+            prediction = self.predict(X)
+
+            #convert back from one-hot vectors
+            if Onehot:
+                Y = np.argmax(Y, axis=1)
+                prediction = np.argmax(prediction, axis=1)
+
+            prediction = prediction[~np.isnan(prediction)]
+            Y = Y[~np.isnan(prediction)]
+            return accuracy_score(Y, prediction)
+
     def get_MSEtest(self):
         arr_outEpochs = np.array(self.mseTest)
         return arr_outEpochs
 
-def sigmoid(x):
-    return 1/(1 + np.exp(-x))
-
-def sigmoid_deriv(x):
-    sig_x  = sigmoid(x)
-    return sig_x*(1 - sig_x)
-
-
-def relu(x):
-    return (np.maximum(0, x))
-
-def relu_deriv(x):
-    x_ = (x > 0) * 1
-    return x_
-
-def leaky_relu(x):
-    if x>0:
-        return x
-    else:
-        return 0.01*x
-
-def tanh_function(x):
-    z = (2/(1 + np.exp(-2*x))) -1
-    return z
-
-def tanh_deriv(x):
-    return 1 - (tanh_function(x))**2
-
-def softmax_function(x):
-    z = np.exp(x)
-    z_ = z/z.sum()
-    return z_
-
-def linear(x):
-    return x
-
-def linear_deriv(x):
-    return 1
-
-def FrankeFunction(x,y):
-    term1 = 0.75*np.exp(-(0.25*(9*x-2)**2) - 0.25*((9*y-2)**2))
-    term2 = 0.75*np.exp(-((9*x+1)**2)/49.0 - 0.1*(9*y+1))
-    term3 = 0.5*np.exp(-(9*x-7)**2/4.0 - 0.25*((9*y-3)**2))
-    term4 = -0.2*np.exp(-(9*x-4)**2 - (9*y-7)**2)
-    return term1 + term2 + term3 + term4
-
-def scale(X_train, X_test, Y_train, Y_test):
-	#Scale data and return it
-    scaler = StandardScaler()
-    if len(X.data.shape) < 1:
-        X_train_ = X_train.reshape(-1,1)
-        X_test_ = X_test.reshape(-1,1)
-    else:
-        X_train_ = X_train
-        X_test_ = X_test
-    Y_train_ = Y_train.reshape(-1,1)
-    Y_test_ = Y_test.reshape(-1,1)
-
-    scaler.fit(X_train_)
-    X_train_ = scaler.transform(X_train_)
-    X_test_ = scaler.transform(X_test_)
-
-    scaler.fit(Y_train_)
-    Y_train_ = scaler.transform(Y_train_)
-    Y_test_ = scaler.transform(Y_test_)
-
-    return X_train_, X_test_, Y_train_, Y_test_
-
-n = 10000
-x = np.linspace(0, 10, n*3)
-z = np.linspace(0, 10, n*3)
-
-def f(x):
-    return 1 + 5*x + 3*x**2
-
-#y = f(x)
-y = FrankeFunction(x,z)
-X = np.array([x,z]).T
-
-X_train, X_test, Y_train, Y_test = train_test_split(X, y,test_size=1/4)
-X_train_, X_test_, Y_train_, Y_test_ = scale(X_train, X_test, Y_train, Y_test)
-ep = 100
-
-#Sigmoid
-dnn = NeuralNetwork(X_train_, Y_train_, 2, 16, relu, relu_deriv, epochs = ep, eta = 1e-5)
-dnn.layers[-1].sigma = linear
-dnn.layers[-1].sigma_d = linear_deriv
-dnn.train(X_test_, Y_test_, calcMSE = True)
-mse = dnn.get_MSEtest()
-plt.plot(np.arange(ep), mse, label="mse")
-plt.xlabel("epochs")
-plt.ylabel("mse")
-plt.legend()
-plt.show()
-
-test_predict = dnn.predict(X_test_)
-
-
-"""
-plt.scatter(X_test_, Y_test_, label="Actual", c="r")
-plt.scatter(X_test_, test_predict, label="Model", alpha = 0.5)
-plt.legend()
-plt.savefig("25 ep sigm")
-plt.show()
-"""
-
-"""
-#RELU
-dnn1 = NeuralNetwork(X_train_, Y_train_, 2, 16, relu, relu_deriv, epochs = ep, eta = 0.0001)
-dnn1.layers[-1].sigma = linear
-dnn1.layers[-1].sigma_d = linear_deriv
-dnn1.train(X_test_, Y_test_, calcMSE = True)
-test_predict = dnn1.predict(X_test_)
-
-
-#Tanh
-dnn2 = NeuralNetwork(X_train_, Y_train_, 2, 16, tanh_function, tanh_deriv, epochs = ep, eta = 0.0001)
-dnn2.layers[-1].sigma = linear
-dnn2.layers[-1].sigma_d = linear_deriv
-dnn2.train(X_test_, Y_test_, calcMSE = True)
-test_predict = dnn2.predict(X_test_)
-
-#MSE vs epochs on training
-mse = dnn.get_MSEtest()
-mse1 = dnn1.get_MSEtest()
-mse2 = dnn2.get_MSEtest()
-
-plt.yscale("log")
-plt.plot(np.arange(ep), mse, label = "Sigmoid lr: 0.001")
-plt.plot(np.arange(ep), mse1, label = "RELU lr: 0.0001")
-plt.plot(np.arange(ep), mse2, label = "Tanh lr: 0.0001")
-plt.legend()
-plt.title(f"Activation funcs : epochs {ep}")
-#plt.savefig(f"Act funcs ep_{ep}", dpi=300)
-plt.show()
-"""
+    def get_ACCtest(self):
+        arr_outEpochs = np.array(self.accuracyTest)
+        return arr_outEpochs

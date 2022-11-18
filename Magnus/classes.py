@@ -60,7 +60,8 @@ class Layer:
         self.a = a
 
 class NeuralNetwork:
-    def __init__(self, X_data, Y_data, n_layers, n_nodes, sigma, sigma_d, epochs=1000, batch_size=100, eta=0.1, lmbd=0, Type="Regression"):
+    def __init__(self, X_data, Y_data, n_layers, n_nodes, sigma,
+                sigma_d, epochs=1000, batch_size=100, eta=0.1, lmbd=0, Type="Regression"):
         np.random.seed(seed)
         #making sure the shape of our data is correct
         if len(X_data.shape) == 2:
@@ -90,7 +91,7 @@ class NeuralNetwork:
             self.layers = [Layer(self.n_features, n_nodes[0], sigma, sigma_d)]
             for i,n in enumerate(n_nodes[1:]):
                 self.layers.append(Layer(self.layers[i], n, sigma, sigma_d))
-                
+
             self.layers.append(Layer(self.layers[i], self.n_outputs, sigma, sigma_d))
 
         #taken from lecture notes
@@ -144,7 +145,7 @@ class NeuralNetwork:
             layer.get_z = z
             layer.get_a = layer.sigma(z)
             a.append(layer.get_a)
-            
+
         return a[-1]
 
     #performs the back propagation
@@ -186,7 +187,7 @@ class NeuralNetwork:
             weights_list.append(weights)
             bias_list.append(bias)
 
-        
+
         #update our gradients, with learning rate and regularization parameter
         for i, layer in enumerate(reversed(self.layers)):
             layer.get_weights = weights_list[i] - self.eta*w_grad[i] + 2*self.lmbd*weights_list[i]
@@ -263,7 +264,7 @@ class NeuralNetwork:
             return R2(Y, output)
         elif self.Type == "Classification":
             prediction = self.predict(X)
-            
+
             #convert back from one-hot vectors
             if Onehot:
                 Y = np.argmax(Y, axis=1)

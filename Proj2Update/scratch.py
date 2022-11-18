@@ -14,9 +14,14 @@ def CostRidge(y, X, beta, lambda_):
     return (1/y.shape[0])*((y- X@beta).T)@(y- X@beta) + lambda_*beta.T@beta
 
 #Define the gradient with costfunction
-gradient = grad(CostOLS, 2) #2 meaning beta
+gradientOLS = grad(CostOLS, 2) #2 meaning beta
+gradientRidge =  grad(CostRidge, 2) #2 meaning beta
 
 def gradient_decent(X, y, beta, lr, n_iter, momentum=0, batch_size=1, useAda=False, useRMS=False, useAdam=False, lambda_ = 0):
+    """
+    Performs gradient_decent on x dataset with y being target data. Option of 3 different optimizers
+    and uses Ridge if lambda value differs from 0. Returns MSE and estimated beta values.
+    """
     MSE_list = [] #Store MSE scores every update to plot
     beta_list = [] #Store every time beta is updated
     change = 0
@@ -34,7 +39,10 @@ def gradient_decent(X, y, beta, lr, n_iter, momentum=0, batch_size=1, useAda=Fal
                 rand_ind = M*np.random.randint(m)
                 xi = X[rand_ind:rand_ind+M]
                 yi = y[rand_ind:rand_ind+M]
+
+                if lambda_ != 0:
                 gradients = gradient(yi, xi, beta)
+
 
                 # Calculate the outer product of the gradients
                 Giter +=gradients @ gradients.T
