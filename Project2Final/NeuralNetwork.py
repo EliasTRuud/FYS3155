@@ -61,7 +61,10 @@ class Layer:
 
 class NeuralNetwork:
     def __init__(self, X_data, Y_data, n_layers, n_nodes, sigma, sigma_d, epochs=100,
-                batch_size=100, eta=0.001, lmbd=0, type="Regression"):
+                batch_size=100, etaVal=0.001, lmbd=0, type="Regression", showruninfo=False):
+
+        X_data = deepcopy(X_data); Y_data = deepcopy(Y_data);
+
         np.random.seed(seed)
         #making sure the shape of our data is correct
         if len(X_data.shape) == 2:
@@ -95,10 +98,11 @@ class NeuralNetwork:
             self.layers.append(Layer(self.layers[i], self.n_outputs, sigma, sigma_d))
 
         #taken from lecture notes
+        self.showruninfo = showruninfo
         self.epochs = epochs
         self.batch_size = batch_size
         self.iterations = self.n_inputs // self.batch_size
-        self.eta = eta
+        self.eta = etaVal
         self.lmbd = lmbd
         self.mseTest = [] #stores mse for each epoch on train data.
         self.mseTrain = [] #stores mse for each epoch on train data.
@@ -195,16 +199,18 @@ class NeuralNetwork:
 
 
     def train(self, X_test = None, Y_test = None, calcMSE = False, calcAcc= False):
+        X_test = deepcopy(X_test); Y_test = deepcopy(Y_test);
         data_indices = np.arange(self.n_inputs)
         #Loop over epochs(i), with minibatches = batch_size, train network with backProp
         k = 0
         for i in range(self.epochs):
-            if i == self.epochs-1:
-                print(f"Epochs {self.epochs}/{self.epochs}")
-                print("Done.\n")
-            if i>=k:
-                print(f"Epochs {i}/{self.epochs}")
-                k += int(self.epochs/5)
+            if self.showruninfo:
+                if i == self.epochs-1:
+                    print(f"Epochs {self.epochs}/{self.epochs}")
+                    print("Done.\n")
+                if i>=k:
+                    print(f"Epochs {i}/{self.epochs}")
+                    k += int(self.epochs/5)
 
             for j in range(self.iterations):
                 chosen_data_points = np.random.choice(data_indices, size=self.batch_size, replace=False)

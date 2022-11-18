@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.metrics import accuracy_score, mean_squared_error
+from copy import deepcopy
 
 seed = 32455
 #different activation function
@@ -57,6 +58,8 @@ def FrankeFunction(x,y):
 #In case we want to scale our data
 def scale(X_train, X_test, Y_train, Y_test):
 	#Scale data and return it
+    X_train = deepcopy(X_train); X_test = deepcopy(X_test);
+    Y_train = deepcopy(Y_train); Y_test = deepcopy(Y_test); 
     scaler = StandardScaler()
     if len(X_train.shape) < 1:
         X_train_ = X_train.reshape(-1,1)
@@ -92,7 +95,7 @@ def plot_data(x,y,data,title=None, Type="Classification"):
     fontsize=16
 
 
-    fig = plt.figure()
+    fig = plt.figure(figsize=(8,8))
     ax = fig.add_subplot(111)
     cax = ax.matshow(data, interpolation='nearest', vmin=0, vmax=1)
 
