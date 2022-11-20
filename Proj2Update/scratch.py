@@ -172,11 +172,19 @@ beta, MSE_list, _ = gradient_decent(X, y, beta, lr, n_epochs, batch_size=M)
 beta_ada, MSE_list_ada, _ = gradient_decent(X, y, beta_ada, lr, n_epochs, batch_size=M, useAda=True)
 beta_rms, MSE_list_rms, _ = gradient_decent(X, y, beta_rms, lr, n_epochs, batch_size=M, useRMS=True)
 beta_adam, MSE_list_adam, _ = gradient_decent(X, y, beta_adam, lr, n_epochs, batch_size=M, useAdam=True)
+
+path = "./Plots/GradDescent"
+pathlib.Path(path).mkdir(parents=True, exist_ok=True)
+
+plt.figure(figsize=(8,6))
+plt.tight_layout()
+plt.title("MSE for different optimizers")
 plt.plot(MSE_list, label="Default")
 plt.plot(MSE_list_ada, label="Ada")
 plt.plot(MSE_list_rms, label="RMS")
 plt.plot(MSE_list_adam, label="Adam")
 plt.legend()
+plt.savefig(f"{path}/mse_opti.pdf", dpi=300)
 plt.show()
 
 
@@ -189,20 +197,24 @@ plt.legend()
 
 
 
-print(beta)
-print(beta_ada)
-print(beta_rms)
-print(beta_adam)
+
 y_pred_grad = beta[0] + beta[1]*x + beta[2]*x*x
 y_pred_grad_ada = beta_ada[0] + beta_ada[1]*x + beta_ada[2]*x*x
 y_pred_grad_rms = beta_rms[0] + beta_rms[1]*x + beta_rms[2]*x*x
+y_pred_grad_adam = beta_adam[0] + beta_adam[1]*x + beta_adam[2]*x*x
 
-"""
-plt.plot(x,y,".")
-plt.plot(x, y_pred_grad, ".")
-plt.plot(x, y_pred_grad_ada, ".")
+plt.figure(figsize=(8,6))
+plt.tight_layout()
+plt.title("Data vs predicted data w/optimizers")
+plt.plot(x, y,".", label="Data")
+plt.plot(x, y_pred_grad, ".", label="Default")
+plt.plot(x, y_pred_grad_ada, ".", label="Ada opti")
+plt.plot(x, y_pred_grad_rms, ".", label="RMS opti")
+plt.plot(x, y_pred_grad_adam, ".", label="Adam opti")
+plt.legend()
+plt.savefig(f"{path}/target_vs_pred.pdf", dpi=300)
 plt.show()
-"""
+
 
 #NOTES:
 # Opg a) juster hyperparametere slik at vi klart ser forskjell på performance.

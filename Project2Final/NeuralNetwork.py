@@ -224,8 +224,12 @@ class NeuralNetwork:
                 #output_outlayer = self.predict(self.X_data_full)
                 #mseT = mean_squared_error(self.Y_data_full, output_outlayer)
                 output_outlayer = self.predict(X_test)
-                mseTest_ = mean_squared_error(Y_test, output_outlayer)
-                self.mseTest.append(mseTest_)
+                if np.isnan(output_outlayer).any() == False:
+                    mseTest_ = mean_squared_error(Y_test, output_outlayer)
+                    self.mseTest.append(mseTest_)
+                else:
+                    #If nan value set it 0.
+                    self.mseTest.append(0)
                 #print(f"Train: {mseT}.   Test: {mseTest} diff: {abs(mseT-mseTest)}")
             if calcAcc:
                 #Train data

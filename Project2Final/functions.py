@@ -58,12 +58,12 @@ def FrankeFunction(x,y):
 #In case we want to scale our data
 def scale(X_train, X_test, Y_train, Y_test):
 	#Scale data and return it
-    X_train = deepcopy(X_train); X_test = deepcopy(X_test);
-    Y_train = deepcopy(Y_train); Y_test = deepcopy(Y_test); 
+    X_train_ = deepcopy(X_train); X_test_ = deepcopy(X_test);
+    Y_train = deepcopy(Y_train); Y_test = deepcopy(Y_test);
     scaler = StandardScaler()
     if len(X_train.shape) < 1:
-        X_train_ = X_train.reshape(-1,1)
-        X_test_ = X_test.reshape(-1,1)
+        X_train_ = X_train_.reshape(-1,1)
+        X_test_ = X_test_.reshape(-1,1)
     else:
         X_train_ = X_train
         X_test_ = X_test
