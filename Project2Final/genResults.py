@@ -178,7 +178,52 @@ def plotLayerNodes(epochs, savefig=True):
     fig.subplots_adjust(wspace=0.001)
     if savefig:
         plt.savefig(f"{path}/TestLayNodesGrid_{epochs}.pdf", dpi=300)
-    plt.show()
+    #plt.show()
+
+#Run accuracy vs epochs for sigmoid
+def runAccTestTrain():
+    path = "./Plots/Classification"
+    pathlib.Path(path).mkdir(parents=True, exist_ok=True)
+
+    seed = 32455
+    np.random.seed(seed)
+    #loading data
+    cancer = load_breast_cancer()
+
+    inputs = cancer.data #30 features
+    targets = cancer.target
+    labels = cancer.feature_names[0:30]
+    epochs = 250
+    etaValue = 0.001
+    lmbdValue = 0
+
+    x = inputs
+    y = targets
+
+    #Splitting into train and test data
+    X_train, X_test, Y_train, Y_test = train_test_split(x, y,test_size=1/4)
+    X_train_, X_test_, Y_train_, Y_test_ = scale(X_train, X_test, Y_train, Y_test)
+
+    dnn = NeuralNetwork(X_train_, Y_train, 2, 16, sigmoid, sigmoid_deriv, epochs = epochs, etaVal = etaValue, lmbd=lmbdValue)
+    dnn.train(X_test_, Y_test, calcAcc=True)
+    accTr = dnn.get_accTrain()
+    accTe = dnn.get_accTest()
+
+    indexTrain = np.argmax(accTr)
+    indexTest = np.argmax(accTe)
+    #print(accTr[-1])
+    #print(accTe[-1])
+    plt.plot(np.arange(epochs), accTr, label = "Train")
+    plt.plot(np.arange(epochs), accTe, label = "Test")
+    plt.scatter(indexTrain, accTr[indexTrain], marker="x", color = "navy", s=35, label=f"Max acc train {100*accTr[indexTrain]:.1f}%")
+    plt.scatter(indexTest, accTe[indexTest], marker="x", color="red", s=35, label=f"Max acc test {100*accTe[indexTest]:.1f}%")
+    plt.legend()
+    plt.xlabel("Epochs")
+    plt.ylabel("Accuracy (1=100%)")
+    plt.title(f"Test vs Train Accuracy: lr={etaValue}")
+    plt.savefig(f"{path}/TestvTrainepochs.pdf", dpi=300)
+    #plt.show()
+
 
 #LogisticRegression
 def calcLogReg(X_train_, X_test_, Y_train, Y_test, epochs, act, actDeriv, title):
@@ -294,7 +339,7 @@ def calcRegression(X_train_, X_test_, Y_train_, Y_test_, epochs, act, actDeriv):
     MSE_test =np.zeros((len(lmbd_vals), len(eta_vals)))      #Define matrices to store accuracy scores as a function
 
     for i, etaValue in enumerate(eta_vals):
-        print(f"{i}/{eta_vals.size}")
+        #print(f"{i}/{eta_vals.size}")
         for j, lmbdValue in enumerate(lmbd_vals):
             dnn = NeuralNetwork(X_train_, Y_train_, 2, 16, sigmoid, sigmoid_deriv, epochs = epochs, etaVal = etaValue, lmbd=lmbdValue)
             dnn.layers[-1].sigma = linear
@@ -308,7 +353,6 @@ def calcRegression(X_train_, X_test_, Y_train_, Y_test_, epochs, act, actDeriv):
 
     df = pd.DataFrame(MSE_test, columns= eta_vals, index = lmbd_vals)
     df.round(2)
-    print("")
     return df
 
 def runPlotEtaLambdaRegr(epochs, savefig=True):
@@ -345,13 +389,14 @@ def runPlotEtaLambdaRegr(epochs, savefig=True):
         plt.savefig(f"{path}/TestEtaLamdGrid_{epochs}.pdf", dpi=300)
     #plt.show()
 
-"""**************************************"""
-def runPlotRegrAct():
+def runPlotRegrAct(showruninfo=False):
     """
     Simple function plots MSE for 3 diff activation functions with the data genereated by
     f(x) = 1 + 5*x + 3*x**2 over 30 000 datapoints. Runs it through network with 2 Layers
     and 16 nodes in each. Scaled data is used to improve performance.
     """
+    if showruninfo:
+        print("Plots MSE for different activation functions for the NeuralNetwork (Sigmoid, RELU, Tanh)")
     seed = 32455
     np.random.seed(seed)
 
@@ -399,6 +444,8 @@ def runPlotRegrAct():
     mse1 = dnn1.get_MSEtest()
     mse2 = dnn2.get_MSEtest()
 
+    plt.figure(figsize=(7,5))
+    plt.tight_layout()
     plt.yscale("log")
     plt.plot(np.arange(ep), mse, label = "Sigmoid lr: 0.001")
     plt.plot(np.arange(ep), mse1, label = "RELU lr: 0.0001")
@@ -407,8 +454,8 @@ def runPlotRegrAct():
     plt.ylabel("MSE")
     plt.legend()
     plt.title(f"Activation funcs MSE")
-    plt.savefig(f"{path}/Act funcs ep_{ep}", dpi=300)
-    plt.show()
+    plt.savefig(f"{path}/Act funcs ep_{ep}.pdf", dpi=300)
+    #plt.show()
 
 #SK learn logistic regression
 def runSklearnLogreg():
@@ -456,72 +503,26 @@ def runSklearnLogreg():
     plt.savefig(f"{path}/SKlearnAcc.pdf", dpi=300)
     #plt.show()
 
-#Run accuracy vs epochs for sigmoid
-def runAccTestTrain():
-    path = "./Plots/Classification"
-    pathlib.Path(path).mkdir(parents=True, exist_ok=True)
 
-    seed = 32455
-    np.random.seed(seed)
-    #loading data
-    cancer = load_breast_cancer()
-
-    inputs = cancer.data #30 features
-    targets = cancer.target
-    labels = cancer.feature_names[0:30]
-    epochs = 250
-    etaValue = 1e-3
-    lmbdValue = 0
-    #Converting to one-hot vectors
-    x = inputs
-    y = targets
-
-    #Splitting into train and test data
-    X_train, X_test, Y_train, Y_test = train_test_split(x, y,test_size=1/4)
-    X_train_, X_test_, Y_train_, Y_test_ = scale(X_train, X_test, Y_train, Y_test)
-
-    dnn = NeuralNetwork(X_train_, Y_train, 2, 16, sigmoid, sigmoid_deriv, epochs = epochs, etaVal = etaValue, lmbd=lmbdValue)
-    dnn.train(X_test_, Y_test, calcAcc=True)
-    accTr = dnn.get_accTrain()
-    accTe = dnn.get_accTest()
-
-    indexTrain = np.argmax(accTr)
-    indexTest = np.argmax(accTe)
-    #print(accTr[-1])
-    #print(accTe[-1])
-    plt.plot(np.arange(epochs), accTr, label = "Train")
-    plt.plot(np.arange(epochs), accTe, label = "Test")
-    plt.scatter(indexTrain, accTr[indexTrain], marker="x", color = "navy", s=35, label=f"Max acc train {100*accTr[indexTrain]:.1f}%")
-    plt.scatter(indexTest, accTe[indexTest], marker="x", color="red", s=35, label=f"Max acc test {100*accTe[indexTest]:.1f}%")
-    plt.legend()
-    plt.xlabel("Epochs")
-    plt.ylabel("Accuracy (1=100%)")
-    plt.title(f"Test vs Train Accuracy: lr={etaValue}")
-    plt.savefig(f"{path}/TestvTrainepochs.pdf", dpi=300)
-    #plt.show()
 
 #Run all plots for Classification. Eta vs lambda. Layer vs nodes. Logistic regression for 3 diff func
 def runClassiAcc():
-    epochs = 30
-    plotEtaLambda(epochs)
-    plotLayerNodes(epochs)
-    epochs = 300
-    plotEtaLambda(epochs)
-    plotLayerNodes(epochs)
+    plotEtaLambda(epochs=30)
+    plotLayerNodes(epochs=30)
+
+    plotEtaLambda(epochs=300)
+    plotLayerNodes(epochs=300)
 
     plotLogRegAct(3)
     plotLogRegAct(30)
     plotLogRegAct(300)
 
 if __name__ == "__main__":
-
-    #Gradient descent function with diff optimizers.
-
-
+    msg = "In genResults"
     #Regression (task b)
-    runPlotEtaLambdaRegr(epochs=30) # 0.4 minutes
-    runPlotEtaLambdaRegr(epochs=300) # 3.8 minutes
-    runPlotEtaLambdaRegr(epochs=1000) # 12.6 minutes
+    #runPlotEtaLambdaRegr(epochs=30) # 0.4 minutes
+    #runPlotEtaLambdaRegr(epochs=300) # 3.8 minutes
+    #runPlotEtaLambdaRegr(epochs=1000) # 12.6 minutes
     #runPlotEtaLambdaRegr(epochs=10000) # 124 minutes
 
     #Regression activation funcs (task c)
@@ -531,67 +532,3 @@ if __name__ == "__main__":
     #runAccTestTrain() #Accuracy vs epochs for Sigmoid.
     #runClassiAcc() #Network + logistic Gridsearch. EtaLambda and LayerNodes.
     #runSklearnLogreg() #comparison with sklearn
-
-
-
-
-
-#Results for different activation functions. Regression. (opg c)
-"""
-#Sigmoid
-dnn = NeuralNetwork(X_train_, Y_train_, 2, 16, sigmoid, sigmoid_deriv, epochs = ep, eta = 0.001)
-dnn.layers[-1].sigma = linear
-dnn.layers[-1].sigma_d = linear_deriv
-dnn.train(X_test_, Y_test_, calcMSE = True)
-test_predict = dnn.predict(X_test_)
-
-
-
-plt.scatter(X_test_, Y_test_, label="Actual", c="r")
-plt.scatter(X_test_, test_predict, label="Model", alpha = 0.5)
-plt.legend()
-plt.savefig("25 ep sigm")
-plt.show()
-"""
-
-"""
-n = 10000
-x = np.linspace(0, 10, n*3)
-
-def f(x):
-    return 1 + 5*x + 3*x**2
-
-y = f(x)
-
-X_train, X_test, Y_train, Y_test = train_test_split(X, y,test_size=1/4)
-X_train_, X_test_, Y_train_, Y_test_ = scale(X_train, X_test, Y_train, Y_test)
-ep = 200
-#RELU
-dnn1 = NeuralNetwork(X_train_, Y_train_, 2, 16, relu, relu_deriv, epochs = ep, eta = 0.0001)
-dnn1.layers[-1].sigma = linear
-dnn1.layers[-1].sigma_d = linear_deriv
-dnn1.train(X_test_, Y_test_, calcMSE = True)
-test_predict = dnn1.predict(X_test_)
-
-
-#Tanh
-dnn2 = NeuralNetwork(X_train_, Y_train_, 2, 16, tanh_function, tanh_deriv, epochs = ep, eta = 0.0001)
-dnn2.layers[-1].sigma = linear
-dnn2.layers[-1].sigma_d = linear_deriv
-dnn2.train(X_test_, Y_test_, calcMSE = True)
-test_predict = dnn2.predict(X_test_)
-
-#MSE vs epochs on training
-mse = dnn.get_MSEtest()
-mse1 = dnn1.get_MSEtest()
-mse2 = dnn2.get_MSEtest()
-
-plt.yscale("log")
-plt.plot(np.arange(ep), mse, label = "Sigmoid lr: 0.001")
-plt.plot(np.arange(ep), mse1, label = "RELU lr: 0.0001")
-plt.plot(np.arange(ep), mse2, label = "Tanh lr: 0.0001")
-plt.legend()
-plt.title(f"Activation funcs : epochs {ep}")
-#plt.savefig(f"Act funcs ep_{ep}", dpi=300)
-plt.show()
-"""

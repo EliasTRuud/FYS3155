@@ -258,28 +258,6 @@ class NeuralNetwork:
         output = self.feedForwardOut(X)
         return output
 
-    #only used for clasification problems
-    def evaluate(self, X, Y, Onehot=True):
-        Y = np.copy(Y)
-        if self.Type == "Regression":
-            if len(X.shape) == 1:
-                X = X.reshape(-1, 1)
-            output = self.feedForwardOut(X)
-            output = output[~np.isnan(output)]
-            Y = Y[~np.isnan(output)]
-            return R2(Y, output)
-        elif self.Type == "Classification":
-            prediction = self.predict(X)
-
-            #convert back from one-hot vectors
-            if Onehot:
-                Y = np.argmax(Y, axis=1)
-                prediction = np.argmax(prediction, axis=1)
-
-            prediction = prediction[~np.isnan(prediction)]
-            Y = Y[~np.isnan(prediction)]
-            return accuracy_score(Y, prediction)
-
     def get_MSEtest(self):
         arr_outEpochs = np.array(self.mseTest)
         return arr_outEpochs

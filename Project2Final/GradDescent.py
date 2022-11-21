@@ -8,6 +8,9 @@ import matplotlib.pyplot as plt
 import pathlib
 import seaborn as sns
 import copy
+import pandas as pd
+import warnings
+warnings.filterwarnings("ignore")
 
 colorpal = sns.color_palette("deep")
 sns.set_style('darkgrid') # darkgrid, white grid, dark, white and ticks
@@ -29,7 +32,7 @@ def CostRidge(y, X, beta, lambda_):
 gradientOLS = grad(CostOLS, 2) #2 meaning beta
 gradientRidge =  grad(CostRidge, 2) #2 meaning beta
 
-def gradient_decent(X, x, y, beta, lr, n_iter, momentum=0, batch_size=1, useAda=False, useRMS=False, useAdam=False, lambda_ = 0):
+def gradient_decent(X, x, y, beta, lr, n_iter, momentum=0, batch_size=20, useAda=False, useRMS=False, useAdam=False, lambda_ = 0):
     """
     Performs gradient_decent on x dataset with y being target data. Option of 3 different optimizers
     and uses Ridge if lambda value differs from 0. Returns MSE and estimated beta values.
@@ -47,6 +50,7 @@ def gradient_decent(X, x, y, beta, lr, n_iter, momentum=0, batch_size=1, useAda=
     if useAda:
         delta = 1e-8
         for i in range(n_iter):
+            #print(f"{i}/{len(n_iter)}")
             Giter = np.zeros(shape=(3,3))
             for i in range(m):
                 #Split up X and y
@@ -70,8 +74,8 @@ def gradient_decent(X, x, y, beta, lr, n_iter, momentum=0, batch_size=1, useAda=
                 beta -= new_change
                 change = new_change
                 y_pred = beta[0] + beta[1]*x + beta[2]*x*x
-                MSE_list.append(mse(y, y_pred))
-                beta_list.append(beta)
+            MSE_list.append(mse(y, y_pred))
+            beta_list.append(beta)
                 #Calculate MSE and store to list and plot.
                 # momentum vs non-momentum
     elif useRMS:
@@ -105,13 +109,14 @@ def gradient_decent(X, x, y, beta, lr, n_iter, momentum=0, batch_size=1, useAda=
                 beta -= new_change
                 change = new_change
                 y_pred = beta[0] + beta[1]*x + beta[2]*x*x
-                MSE_list.append(mse(y, y_pred))
-                beta_list.append(beta)
+            MSE_list.append(mse(y, y_pred))
+            beta_list.append(beta)
     elif useAdam:
         b1 = 0.9
         b2 = 0.999
         t = 0
         eps = 1e-8
+        eps = 0.001
         m_ = 0
         v = 0
         for i in range(n_iter):
@@ -137,8 +142,8 @@ def gradient_decent(X, x, y, beta, lr, n_iter, momentum=0, batch_size=1, useAda=
                 beta -= new_change
                 change = new_change
                 y_pred = beta[0] + beta[1]*x + beta[2]*x*x
-                MSE_list.append(mse(y, y_pred))
-                beta_list.append(beta)
+            MSE_list.append(mse(y, y_pred))
+            beta_list.append(beta)
     else:
         for i in range(n_iter):
             for i in range(m):
@@ -156,43 +161,79 @@ def gradient_decent(X, x, y, beta, lr, n_iter, momentum=0, batch_size=1, useAda=
                 beta -= new_change
                 change = new_change
                 y_pred = beta[0] + beta[1]*x + beta[2]*x*x
+            #Certain runs y_pred will be NaN/inifinity which stops run. If encountered put MSE = 10.
+            try:
                 MSE_list.append(mse(y, y_pred))
-                beta_list.append(beta)
+            except:
+                MSE_list.append(10) #if NaN of infinity return value of 10
+            beta_list.append(beta)
                 #Calculate MSE and store to list and plot.
                 # momentum vs non-momentum
     #plt.plot(MSE_list)
     #plt.show()
     return beta, MSE_list, beta_list
 
-def calcSGDGridsearch(X, x, y):
-    eta_vals = np.logspace(-7, 1, 9)
-    lmbd_vals = np.logspace(-5, 0, 6)
-    lmbd_vals = np.insert(lmbd_vals, 0, 0)
+def calcSGDGridsearch(X, x, y, epochs, batch_size, optimizer=None):
+
+    M = batch_size
+    eta_vals = np.array([1e-4, 1e-3, 1e-2, 1e-1, 1e0, 10])
+    lmbd_vals = np.array([0, 1e-5, 1e-4, 1e-3, 1e-2])
+
+    useAda_ = False
+    useRMS_ = False
+    useAdam_ = False
+
+    if optimizer=="Ada":
+        useAda_ = True
+    elif optimizer=="RMS":
+        useRMS_ = True
+    elif optimizer=="Adam":
+        useAdam_ = True
+
+    np.random.seed(200)
+    beta = np.random.randn(3,1) #randomized initial values for beta
 
     #Col = learning rate,  Rows = lambdas
     Train_accuracy=np.zeros((len(lmbd_vals), len(eta_vals)))      #Define matrices to store accuracy scores as a function
-    Test_accuracy=np.zeros((len(lmbd_vals), len(eta_vals)))       #of learning rate and number of hidden neurons for
+    MSE_array=np.zeros((len(lmbd_vals), len(eta_vals)))       #of learning rate and number of hidden neurons for
 
+    bestMSE = 100
+    bestBeta = np.array([0])
+    bestMSElist = np.array([0])
+    bestEta = 1000
+    bestLmbd = 1000
     for i, etaValue in enumerate(eta_vals):
         for j, lmbdValue in enumerate(lmbd_vals):
-            gradient_decent(X, x, y, beta_ada, lr=etaValue, n_epochs, batch_size=M, useAda=True, lambda_=lmbdValue)
-            dnn.train(X_test_, Y_test, calcAcc=True)
-            accTr = dnn.get_accTrain()
-            accTe = dnn.get_accTest()
-            indexTrain = np.argmax(accTr)
-            indexTest = np.argmax(accTe)
-            accTra = accTr[indexTrain]
-            accTes = accTe[indexTest]
-            Train_accuracy[j, i] = accTra
-            Test_accuracy[j, i] = accTes
+            beta_, MSE_list, _ = gradient_decent(X, x, y, beta, lr=etaValue, n_iter = epochs,
+                                                batch_size=M, useAda=useAda_, useRMS=useRMS_,
+                                                useAdam=useAdam_, lambda_=lmbdValue)
+            #mse_val = MSE_list[-1]
+            mse_val = MSE_list[np.argmin(MSE_list)]
+            #Update when found lower value
+            if mse_val < bestMSE:
+                bestMSE = mse_val
+                bestBeta = beta_
+                bestMSElist = MSE_list
+                bestEta = etaValue
+                bestLmbd = lmbdValue
+            MSE_array[j, i] = mse_val
 
+    df = pd.DataFrame(MSE_array, columns= eta_vals, index = lmbd_vals)
+    return df, bestMSE, bestBeta, bestMSElist, bestEta, bestLmbd
 
+def runPlotsSGD(batchsize, epochs, showruninfo=False):
 
-def runPlotsSGD():
+    n_epochs = epochs #epochs
+    M = batchsize #batchsize
+    if showruninfo:
+        print("Calculating and plotting gridsearch for SGD with optimizers. As well as MSE vs epochs for best found parameters")
+    path = "./Plots/GradDescent"
+    pathlib.Path(path).mkdir(parents=True, exist_ok=True)
+
     n = 10000
     x = np.random.rand(n,1)
     #Analytical value. Static learning rate.
-    y = 2+3*x+4*x*x+0.1*np.random.rand(n,1)*0.1
+    y = 2+3*x+4*x*x+0.1*np.random.rand(n,1)*0.2
 
     X = np.c_[np.ones((n,1)), x, x**2] #design matrix
     XT_X = X.T @ X
@@ -201,82 +242,70 @@ def runPlotsSGD():
     EigValues, EigVectors = np.linalg.eig(H)
     lr = 1.0/np.max(EigValues)
 
-    #X_train, X_test, y_train, y_test = train_test_split(X,z, test_size=0.2)
-    #Simple OLS fit
+    #Simple OLS fit for comparison
     model = OLS_reg(fit_intercept=True)
     model.fit(X, y)
     y_pred = model.intercept_ + model.coef_[0][1]*x + model.coef_[0][2]*x*x
+    MSE_SKlearn = mse(y, y_pred)
+    #print(f"SKlearn OLS: {MSE_SKlearn:.2e}")
 
-    np.random.seed(200)
-    beta = np.random.randn(3,1)
-    np.random.seed(200)
-    beta_ada = np.random.randn(3,1)
-    np.random.seed(200)
-    beta_rms = np.random.randn(3,1)
-    np.random.seed(200)
-    beta_adam = np.random.randn(3,1)
+    #Run gridsearch with default, ada, rms and adam optimizer.
+    #Pulls the betavalues corresponding to the best MSE.
+    df_Adam, bestMSE_Adam, bestBeta_Adam, bestMSE_list_Adam, bestEta_Adam, bestLmbd_Adam = calcSGDGridsearch(X, x, y, n_epochs, batch_size=M, optimizer = "Adam")
+    #print(f"Adam done bestMSE={bestMSE_Adam:.2e}")
+    df, bestMSE, bestBeta, bestMSE_list, bestEta, bestLmbd = calcSGDGridsearch(X, x, y, n_epochs,  batch_size=M )
+    #print(f"Default done bestMSE={bestMSE:.2e}")
+    df_Ada, bestMSE_Ada, bestBeta_Ada, bestMSE_list_Ada, bestEta_Ada, bestLmbd_Ada = calcSGDGridsearch(X, x, y, n_epochs, batch_size=M, optimizer = "Ada")
+    #print(f"Ada done bestMSE={bestMSE_Ada:.2e}")
+    df_RMS, bestMSE_RMS, bestBeta_RMS, bestMSE_list_RMS, bestEta_RMS, bestLmbd_RMS = calcSGDGridsearch(X, x, y, n_epochs, batch_size=M, optimizer = "RMS")
+    #print(f"RMS done bestMSE={bestMSE_RMS:.2e}")
 
-    print(beta)
-    #lr = 0.01
-    n_epochs = 120
-    M = 5   #size of each minibatch
+    if showruninfo:
+        print(f"SKlearn OLS: {MSE_SKlearn:.2e}")
+        print(f"Default done bestMSE={bestMSE:.2e}")
+        print(f"Ada done bestMSE={bestMSE_Ada:.2e}")
+        print(f"RMS done bestMSE={bestMSE_RMS:.2e}")
+        print(f"Adam done bestMSE={bestMSE_Adam:.2e}")
+        print(f"Done.\n")
 
-    lr, lambda_ = calcSGDGridsearch()
+    fig, (ax1, ax2, ax3, ax4) = plt.subplots(ncols=4, figsize=(16,8), sharey=True, tight_layout=True)
+    #fig.tight_layout(rect=[0, 0.1, 1, 0.92])
+    plt.rc('axes', titlesize=16)
+    plt.subplots_adjust(hspace=0.1)
+    plt.suptitle(f"SGD Opti - Gridsearch for eta & lambda", fontsize = 16, y = 0.04)
+    ax1.title.set_text("Default")
+    ax2.title.set_text("Ada")
+    ax3.title.set_text("RMS")
+    ax4.title.set_text("Adam")
 
-    beta_, MSE_list, _ = gradient_decent(X, x, y, beta, lr, n_epochs, batch_size=M)
-    beta_ada, MSE_list_ada, _ = gradient_decent(X, x, y, beta_ada, lr, n_epochs, batch_size=M, useAda=True, lambda_=0)
-    beta_rms, MSE_list_rms, _ = gradient_decent(X, x, y, beta_rms, lr, n_epochs, batch_size=M, useRMS=True, lambda_=0)
-    beta_adam, MSE_list_adam, _ = gradient_decent(X, x, y, beta_adam, lr, n_epochs, batch_size=M, useAdam=True, lambda_=0)
+    ax1 = sns.heatmap(df,  ax=ax1, cbar=False, annot=True, annot_kws={"fontsize":11}, fmt=".1e" )
+    ax2 = sns.heatmap(df_Ada,  ax=ax2, cbar=False, annot=True, annot_kws={"fontsize":11}, fmt=".1e")
+    ax3 = sns.heatmap(df_RMS, ax=ax3, cbar=False, annot=True, annot_kws={"fontsize":11}, fmt=".1e")
+    ax4 = sns.heatmap(df_Adam, ax=ax4, cbar=True, annot=True, annot_kws={"fontsize":11}, fmt=".1e")
 
-    print(beta)
-    exit()
-    path = "./Plots/GradDescent"
-    pathlib.Path(path).mkdir(parents=True, exist_ok=True)
+    axs = [ax1, ax2, ax3, ax4]
+    ax1.set(ylabel="Lambda")
+    ax1.set(xlabel="Eta")
+    ax4.set(xlabel="Eta")
+    fig.subplots_adjust(wspace=0.001)
+    plt.savefig(f"{path}/SGD_gridsearch_opti_ep{n_epochs}_batch{M}.pdf", dpi=300)
 
+    #Plot of best MSE from gridsearch for diff optimizer
     plt.figure(figsize=(8,6))
     plt.tight_layout()
-    plt.title("MSE for different optimizers")
-    plt.plot(MSE_list, label="Default")
-    plt.plot(MSE_list_ada, label="Ada")
-    plt.plot(MSE_list_rms, label="RMS")
-    plt.plot(MSE_list_adam, label="Adam")
+    plt.title("SGD: MSE for different optimizers")
+    plt.plot(np.arange(n_epochs+1), bestMSE_list_Ada, label=f"Ada {bestMSE_Ada:.2e} eta: {bestEta_Ada} lmbd: {bestLmbd_Ada}")
+    plt.plot(np.arange(n_epochs+1), bestMSE_list_RMS, label=f"RMS {bestMSE_RMS:.2e} eta: {bestEta_RMS} lmbd: {bestLmbd_RMS}", linestyle="dashed")
+    plt.plot(np.arange(n_epochs+1), bestMSE_list_Adam, label=f"Adam {bestMSE_Adam:.2e} eta: {bestEta_Adam} lmbd: {bestLmbd_Adam}")
+    plt.plot(np.arange(n_epochs+1), bestMSE_list, label=f"Default {bestMSE:.2e} eta: {bestEta} lmbd: {bestLmbd}")
+    plt.text(2.5, 4, f"SKLearnOLS: {MSE_SKlearn:.2e}", fontsize = 14)
+    plt.xlabel("Epochs")
+    plt.ylabel("MSE")
+    plt.yscale("log")
     plt.legend()
-    plt.savefig(f"{path}/mse_opti.pdf", dpi=300)
-    plt.show()
+    plt.savefig(f"{path}/Best_MSE_Opti_ep{n_epochs}_batch{M}.pdf", dpi=300)
+    #plt.show()
 
-
-    """
-    plt.plot(beta, label="Default")
-    plt.plot(beta_ada, label="Ada")
-    plt.plot(beta_rms, label="RMS")
-    plt.legend()
-    """
-
-
-
-
-    y_pred_grad = beta[0] + beta[1]*x + beta[2]*x*x
-    y_pred_grad_ada = beta_ada[0] + beta_ada[1]*x + beta_ada[2]*x*x
-    y_pred_grad_rms = beta_rms[0] + beta_rms[1]*x + beta_rms[2]*x*x
-    y_pred_grad_adam = beta_adam[0] + beta_adam[1]*x + beta_adam[2]*x*x
-
-    plt.figure(figsize=(8,6))
-    plt.tight_layout()
-    plt.title("Data vs predicted data w/optimizers")
-    plt.plot(x, y,".", label="Data")
-    plt.plot(x, y_pred_grad, ".", label="Default")
-    plt.plot(x, y_pred_grad_ada, ".", label="Ada opti")
-    plt.plot(x, y_pred_grad_rms, ".", label="RMS opti")
-    plt.plot(x, y_pred_grad_adam, ".", label="Adam opti")
-    plt.legend()
-    plt.savefig(f"{path}/target_vs_pred.pdf", dpi=300)
-    plt.show()
-
-
-    #NOTES:
-    # Opg a) juster hyperparametere slik at vi klart ser forskjell på performance.
-    # Prøv ulike learning rates, statisk.
-    # Adam : https://arxiv.org/abs/1412.6980
 
 if __name__ == "__main__":
-    runPlotsSGD()
+    runPlotsSGD(batchsize=70, epochs = 400, showruninfo=True)

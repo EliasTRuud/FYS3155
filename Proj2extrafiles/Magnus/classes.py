@@ -1,7 +1,7 @@
 from functions import *
 
 
-seed = 32455
+
 class Layer:
     def __init__(self, prevLayer, n_nodes, sigma, simga_d, bias=0):
         self.n_nodes = n_nodes
@@ -19,13 +19,13 @@ class Layer:
         self.sigma_d = simga_d
 
     def init_weights(self):
-        self.weights = np.random.randn(self.n_weights, self.n_nodes)
+        self.weights = np.random.randn(self.n_weights, self.n_nodes) + 0.001
 
     def init_bias(self, bias):
         self.bias = np.zeros(self.n_nodes) + bias
 
     def __str__(self):
-        return f"{self.weights.shape}, {self.bias.shape}"
+        return f"{self.z.shape}, {self.weights.shape}, {self.bias.shape}"
 
     @property
     def get_bias(self):
@@ -61,7 +61,7 @@ class Layer:
 
 class NeuralNetwork:
     def __init__(self, X_data, Y_data, n_layers, n_nodes, sigma,
-                sigma_d, epochs=1000, batch_size=100, eta=0.1, lmbd=0, type="Regression"):
+                sigma_d, epochs=1000, batch_size=100, eta=0.1, lmbd=0, Type="Regression"):
         np.random.seed(seed)
         #making sure the shape of our data is correct
         if len(X_data.shape) == 2:
@@ -100,12 +100,9 @@ class NeuralNetwork:
         self.iterations = self.n_inputs // self.batch_size
         self.eta = eta
         self.lmbd = lmbd
-        self.mseTest = [] #stores mse for each epoch on train data.
-        self.mseTrain = [] #stores mse for each epoch on train data.
-        self.accuracyTest = []
-        self.accuracyTrain = []
+
         #saving what kind of problem we have for later
-        self.Type = type
+        self.Type = Type
 
     #feeds the input data forward
     def feedForward(self):
@@ -279,8 +276,4 @@ class NeuralNetwork:
 
     def get_MSEtest(self):
         arr_outEpochs = np.array(self.mseTest)
-        return arr_outEpochs
-
-    def get_ACCtest(self):
-        arr_outEpochs = np.array(self.accuracyTest)
         return arr_outEpochs
