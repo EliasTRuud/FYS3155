@@ -308,4 +308,4 @@ def runPlotsSGD(batchsize, epochs, showruninfo=False):
 
 
 if __name__ == "__main__":
-    runPlotsSGD(batchsize=1000, epochs = 400, showruninfo=True)
+    runPlotsSGD(batchsize=50, epochs = 400, showruninfo=True)
