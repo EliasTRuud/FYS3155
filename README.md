@@ -2,8 +2,11 @@ Neural network
 ==============================
 In this project we implement codes which we explore Stochastic Gradient Descent and optimizers for learning rate.
 Make a feed forward neural network using basic SGD and apply it to regression(Frankie) and classification problem(sklearn breast cancer).
-Search for paramters: lambda and eta. As well as layer vs nodes for classification.
+Then use a simplified network with no hidden layers as LogisticRegression class.
 
+Search for paramters: lambda and eta for regression. As well as layer vs nodes for classification. Using different activation functions: sigmoid, tanh and RELU
+
+Note: The Latex file was being difficult when it came to figures placement. Resulting in most forcing itself below most of the text. Tried referecing as much as possible to the figures. Thanks for understanding, maybe you have a easy fix. Tried using [!htb] etc
 
 ## Requirements
 
@@ -27,7 +30,7 @@ Then navigate to the `Project2Final` folder.
 To reproduce the test runs using the Franke function, run which asks user if one wishes to reproduce all figures and then plot.
 It will move all plots to Plots/ and to the relevant folder. Filename includes relevant info in it.
 
-		python3 main.py
+		python main.py
 
 This should produce all the main plots in the report. A couple additional plots are commented out due to long run time. Simply comment them out to run. Optionally you can run new results with different epochs and batch size etc depending on the task.
 
@@ -35,7 +38,7 @@ This should produce all the main plots in the report. A couple additional plots 
 
 The algorithms are coded into different files:
 
-1. NeuralNetwork.py -
+1. NeuralNetwork.py - 
 
 2. functions.py -
 
