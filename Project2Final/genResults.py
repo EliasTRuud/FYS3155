@@ -418,14 +418,14 @@ def runPlotRegrAct(showruninfo=False):
     ep = 200
 
     #Sigmoid
-    dnn = NeuralNetwork(X_train_, Y_train_, 2, 16, sigmoid, sigmoid_deriv, epochs = ep, etaVal = 0.0001)
+    dnn = NeuralNetwork(X_train_, Y_train_, 2, 16, sigmoid, sigmoid_deriv, epochs = ep, etaVal = 0.001)
     dnn.layers[-1].sigma = linear
     dnn.layers[-1].sigma_d = linear_deriv
     dnn.train(X_test_, Y_test_, calcMSE = True)
     #test_predict = dnn.predict(X_test_)
 
     #RELU
-    dnn1 = NeuralNetwork(X_train_, Y_train_, 2, 16, relu, relu_deriv, epochs = ep, etaVal = 0.0001)
+    dnn1 = NeuralNetwork(X_train_, Y_train_, 2, 16, relu, relu_deriv, epochs = ep, etaVal = 0.001)
     dnn1.layers[-1].sigma = linear
     dnn1.layers[-1].sigma_d = linear_deriv
     dnn1.train(X_test_, Y_test_, calcMSE = True)
@@ -433,23 +433,30 @@ def runPlotRegrAct(showruninfo=False):
 
 
     #Tanh
-    dnn2 = NeuralNetwork(X_train_, Y_train_, 2, 16, tanh, tanh_deriv, epochs = ep, etaVal = 0.0001)
+    dnn2 = NeuralNetwork(X_train_, Y_train_, 2, 16, tanh, tanh_deriv, epochs = ep, etaVal = 0.001)
     dnn2.layers[-1].sigma = linear
     dnn2.layers[-1].sigma_d = linear_deriv
     dnn2.train(X_test_, Y_test_, calcMSE = True)
-    #test_predict = dnn2.predict(X_test_)
+
+    #LeakyRelu
+    dnn3 = NeuralNetwork(X_train_, Y_train_, 2, 16, leaky_relu, leaky_relu_deriv, epochs = ep, etaVal = 0.0001)
+    dnn3.layers[-1].sigma = linear
+    dnn3.layers[-1].sigma_d = linear_deriv
+    dnn3.train(X_test_, Y_test_, calcMSE = True)
 
     #MSE vs epochs on training
     mse = dnn.get_MSEtest()
     mse1 = dnn1.get_MSEtest()
     mse2 = dnn2.get_MSEtest()
+    mse3 = dnn3.get_MSEtest()
 
     plt.figure(figsize=(7,5))
     plt.tight_layout()
     plt.yscale("log")
-    plt.plot(np.arange(ep), mse, label = "Sigmoid lr: 0.001")
-    plt.plot(np.arange(ep), mse1, label = "RELU lr: 0.0001")
-    plt.plot(np.arange(ep), mse2, label = "Tanh lr: 0.0001")
+    plt.plot(np.arange(ep), mse, label = "Sigmoid lr: 0.01")
+    plt.plot(np.arange(ep), mse1, label = "RELU lr: 0.001")
+    plt.plot(np.arange(ep), mse2, label = "Tanh lr: 0.001")
+    plt.plot(np.arange(ep), mse3, label = "LeakyRelu lr: 0.0001")
     plt.xlabel("Epochs")
     plt.ylabel("MSE")
     plt.legend()
@@ -526,7 +533,7 @@ if __name__ == "__main__":
     #runPlotEtaLambdaRegr(epochs=10000) # 124 minutes
 
     #Regression activation funcs (task c)
-    #runPlotRegrAct()
+    runPlotRegrAct()
 
     #Classification (task d+task e)
     #runAccTestTrain() #Accuracy vs epochs for Sigmoid.

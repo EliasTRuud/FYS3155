@@ -71,6 +71,7 @@ def main():
 
     endClassi = time.time()
     print(f"Classification done: t={(endClassi-startClassi)/60:.2f} min\n")
+    
     """
     #4 LogisticRegression on same dataset and predicting positive or not for breast cancer.
     Architecture is basically a netowrk with 0 hidden layers with a step function applied on the output.

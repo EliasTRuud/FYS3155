@@ -1,4 +1,4 @@
-Neural network 
+Neural network
 ==============================
 In this project we implement codes which we explore Stochastic Gradient Descent and optimizers for learning rate.
 Make a feed forward neural network using basic SGD and apply it to regression(Frankie) and classification problem(sklearn breast cancer).
@@ -10,7 +10,7 @@ Search for paramters: lambda and eta. As well as layer vs nodes for classificati
 It is necessary to have python3 installed, in particular we tested our code with the following modules installed:
 Running python version 3.7.6
 
-Packasges:
+Packages:
 * `scikit-learn` ver. = 0.22.1
 * `numpy` ver. = 1.18.1
 * `pandas` ver. = 1.0.1
@@ -25,6 +25,7 @@ First clone the repository using
 
 Then navigate to the `Project2Final` folder.
 To reproduce the test runs using the Franke function, run which asks user if one wishes to reproduce all figures and then plot.
+It will move all plots to Plots/ and to the relevant folder. Filename includes relevant info in it.
 
 		python3 main.py
 
@@ -34,10 +35,10 @@ This should produce all the main plots in the report. A couple additional plots 
 
 The algorithms are coded into different files:
 
-1. 	NeuralNetwork.py
+1. NeuralNetwork.py -
 
-2. 	functions.py
+2. functions.py -
 
-3. 	genResults.py
+3. genResults.py -
 
-4. GradDescent.py
+4. GradDescent.py -

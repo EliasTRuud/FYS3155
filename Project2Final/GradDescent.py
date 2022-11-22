@@ -115,8 +115,8 @@ def gradient_decent(X, x, y, beta, lr, n_iter, momentum=0, batch_size=20, useAda
         b1 = 0.9
         b2 = 0.999
         t = 0
-        eps = 1e-8
-        eps = 0.001
+        eps = 1e-4
+        #eps = 0.001
         m_ = 0
         v = 0
         for i in range(n_iter):
@@ -308,4 +308,4 @@ def runPlotsSGD(batchsize, epochs, showruninfo=False):
 
 
 if __name__ == "__main__":
-    runPlotsSGD(batchsize=70, epochs = 400, showruninfo=True)
+    runPlotsSGD(batchsize=1000, epochs = 400, showruninfo=True)

@@ -60,8 +60,9 @@ class Layer:
         self.a = a
 
 class NeuralNetwork:
-    def __init__(self, X_data, Y_data, n_layers, n_nodes, sigma, sigma_d, epochs=100,
-                batch_size=100, etaVal=0.001, lmbd=0, type="Regression", showruninfo=False):
+    def __init__(self, X_data, Y_data, n_layers, n_nodes, sigma,
+                sigma_d, epochs=100, batch_size=100, etaVal=0.001,
+                lmbd=0, showruninfo=False):
 
         X_data = deepcopy(X_data); Y_data = deepcopy(Y_data);
 
@@ -108,8 +109,7 @@ class NeuralNetwork:
         self.mseTrain = [] #stores mse for each epoch on train data.
         self.accuracyTest = []
         self.accuracyTrain = []
-        #saving what kind of problem we have for later
-        self.Type = type
+
 
     #feeds the input data forward
     def feedForward(self):
@@ -197,7 +197,6 @@ class NeuralNetwork:
             layer.get_weights = weights_list[i] - (self.eta*w_grad[i] + 2*self.lmbd*weights_list[i])
             layer.get_bias = bias_list[i] - (self.eta*bias_grad[i] + 2*self.lmbd*bias_list[i])
 
-
     def train(self, X_test = None, Y_test = None, calcMSE = False, calcAcc= False):
         X_test = deepcopy(X_test); Y_test = deepcopy(Y_test);
         data_indices = np.arange(self.n_inputs)
@@ -241,7 +240,7 @@ class NeuralNetwork:
                 accTr = accuracy_score(y_data, predTrain)
                 self.accuracyTrain.append(accTr)
 
-                if X_test.all() != None:
+                if X_test.all() != None: #Check if X_test is given as input, then calc accuracy on test
                     #Test data
                     predTe = self.predict(X_test)
                     predTest = np.piecewise(predTe, [predTe < 0.5, predTe >= 0.5], [0, 1])
