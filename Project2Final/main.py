@@ -71,7 +71,7 @@ def main():
 
     endClassi = time.time()
     print(f"Classification done: t={(endClassi-startClassi)/60:.2f} min\n")
-    
+
     """
     #4 LogisticRegression on same dataset and predicting positive or not for breast cancer.
     Architecture is basically a netowrk with 0 hidden layers with a step function applied on the output.
@@ -93,21 +93,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-"""
-Disussion algorithms:
-speed
-complexity
-accuracy
-tuneability
-"""
-
-
-"""
-Analysis of differnet stuff:
-
-You start with: lr and lambda. Find best pairing, use then those as constants. : 1 -> 1e-7 , 10 values
-Again gridsearch -> all 3: relu, sigmoid, tanh activation functions.
-With layers vs nodes.
-
-"""
