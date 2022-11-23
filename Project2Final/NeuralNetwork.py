@@ -3,6 +3,12 @@ from sklearn.metrics import mean_squared_error, accuracy_score
 
 seed = 32455
 class Layer:
+    """
+    Stores the weights and biases. Weights are initalized with a random normal distribution
+    using np.random.radn and bias is set to 0 by default.
+
+    Functions to get and set these arrays are also available.
+    """
     def __init__(self, prevLayer, n_nodes, sigma, simga_d, bias=0):
         self.n_nodes = n_nodes
         self.prevLayer = prevLayer
@@ -60,6 +66,18 @@ class Layer:
         self.a = a
 
 class NeuralNetwork:
+    """
+    A feed forward neural netowrk which implements stochastic gradient descent with minibatches.
+    Using the main methods feedForward() to calculate the values in each nodes and backProp()
+    to update our weights to improve the model. Lastly a train() function whichs runs over
+    n epochs which is by default set to 100.
+
+    If train() with regression and calcMSE=True is passed in it will also calculate MSE for each epoch
+    which it stores in class variable mseTest and mseTrain. Similarly for classification we can pass
+    calcAcc=True which stores in accuracyTest and accuracyTrain.
+
+    If showruninfo is set to true in initalization it will print progress every 20% passed when training over epochs.
+    """
     def __init__(self, X_data, Y_data, n_layers, n_nodes, sigma,
                 sigma_d, epochs=100, batch_size=100, etaVal=0.001,
                 lmbd=0, showruninfo=False):

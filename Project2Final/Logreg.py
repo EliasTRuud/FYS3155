@@ -10,6 +10,10 @@ seed = 32455
 np.random.seed(seed)
 
 class LogRegClass:
+    """
+    LogisticRegression class which is a NeuralNetwork network without hidden layers. Additionally
+    a stepwise function is added to the output as the model will just output either 0 or 1.
+    """
     def __init__(self, X_data, Y_data, sigma, sigma_d, epochs=100, batch_size=100, eta=0.1, lmbd=0):
         if len(X_data.shape) == 2:
             self.X_data_full = X_data

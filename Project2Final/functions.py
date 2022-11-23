@@ -66,6 +66,22 @@ def FrankeFunction(x,y):
 
 #In case we want to scale our data
 def scale(X_train, X_test, Y_train, Y_test):
+	"""
+	Scales the data for train and test using sklearn StandardScaler.
+
+	Args:
+		X_train (ndarray) : Array containing training data for features
+		X_test (ndarray) : Array containing test data for features
+		Y_test (ndarray) : Array containing training data for targets.
+		Y_test (ndarray) : Array containing test data for targets.
+
+
+	Returns:
+		X_train_ (ndarray) : Scaled version of X_train
+		X_test_ (ndarray) : Scaled version of X_test
+		Y_test_ (ndarray) : Scaled version of Y_train
+		Y_test_ (ndarray) : Scaled version of Y_test
+	"""
 	#Scale data and return it
     X_train_ = deepcopy(X_train); X_test_ = deepcopy(X_test);
     Y_train = deepcopy(Y_train); Y_test = deepcopy(Y_test);
@@ -90,8 +106,14 @@ def scale(X_train, X_test, Y_train, Y_test):
     return X_train_, X_test_, Y_train_, Y_test_
 
 def MSE(y_data,y_model):
+    """
+    Returns Mean squared error for the target data vs model predictions. Lower meaning better
+    """
     n = np.size(y_model)
     return np.sum((y_data-y_model)**2)/n
 
 def R2(y_data, y_model):
+    """
+    Returns the R2 score for the target data vs model predictions. Zero to one, one meaning best.
+    """
     return 1 - np.sum((y_data - y_model)**2) / np.sum((y_data - np.mean(y_data)) ** 2)

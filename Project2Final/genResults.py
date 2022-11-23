@@ -21,6 +21,26 @@ plt.rc('font', size=13)          # controls default text sizes
 
 #Classification
 def calcEtaLambda(X_train_, X_test_, Y_train, Y_test, epochs, act, actDeriv, title):
+    """
+    Calculates the best test accuracy using gridsearch of set values for eta and lambda parameter.
+    Returns a pandas dataframe including all the values from Test_accuracy. Using the NeuralNetwork to train and predict.
+
+    Args:
+		X_train_ (ndarray) : Array containing training data, in this case scaled
+		X_test_ (ndarray) : Array containing test data, in this case scaled
+        Y_train (ndarray) : Array containing training data for targets
+		Y_test (ndarray) : Array containing test data for targets
+        epochs (int) : Number of epochs which the netowrk will train
+        act (function) : Activation unction of which the hidden layers will use.
+        act_deriv (function) : The derivative of the chosen activation function
+        title (str) : Name of activation function which is tested
+
+
+	Returns:
+		df (pd.DataFrame) : Includes all the results for best accuracy found product of the gridsearch.
+                            Col = eta values and rows = lambda values
+        title ("str") : Name of activation function which is tested returned to identify dataframe.
+    """
     eta_vals = np.logspace(-7, 1, 9)
     lmbd_vals = np.logspace(-5, 0, 6)
     lmbd_vals = np.insert(lmbd_vals, 0, 0)
@@ -47,6 +67,15 @@ def calcEtaLambda(X_train_, X_test_, Y_train, Y_test, epochs, act, actDeriv, tit
     return df, title
 
 def plotEtaLambda(epochs, savefig=True):
+    """
+    Runs gridsearch for NeuralNetwork using 3 activation functions: sigmoid, tanh and RELU.
+    Uses the breast cancer dataset which is scaled and split into test and train. Search for eta and lambda.
+    Uses calcEtaLambda() which returns the dataframes which is then plotted and saved in Plots/Classification/
+
+    Args:
+        epochs (int) : Number of epochs used for training.
+        savefig (boolean) : Wether to save figure or not, deafult=True.
+    """
     path = "./Plots/Classification"
     pathlib.Path(path).mkdir(parents=True, exist_ok=True)
 
@@ -93,6 +122,26 @@ def plotEtaLambda(epochs, savefig=True):
     #plt.show()
 
 def calcLayerNodes(X_train_, X_test_, Y_train, Y_test, epochs, act, actDeriv, title):
+    """
+    Calculates the best test accuracy using gridsearch of set values for layer and nodes parameter.
+    Returns a pandas dataframe including all the values from Test_accuracy. Using the NeuralNetwork to train and predict.
+
+    Args:
+		X_train_ (ndarray) : Array containing training data, in this case scaled
+		X_test_ (ndarray) : Array containing test data, in this case scaled
+        Y_train (ndarray) : Array containing training data for targets
+		Y_test (ndarray) : Array containing test data for targets
+        epochs (int) : Number of epochs which the netowrk will train
+        act (function) : Activation unction of which the hidden layers will use.
+        act_deriv (function) : The derivative of the chosen activation function
+        title (str) : Name of activation function which is tested
+
+
+	Returns:
+		df (pd.DataFrame) : Includes all the results for best accuracy found product of the gridsearch.
+                            Col = layers and rows = nodes.
+        title ("str") : Name of activation function which is tested returned to identify dataframe.
+    """
     layer_vals = np.array([5,4,3,2,1])
     #layer_vals = np.array([2,1])
     nodes_vals = np.array([64,32,16,8,4,2])
@@ -134,6 +183,15 @@ def calcLayerNodes(X_train_, X_test_, Y_train, Y_test, epochs, act, actDeriv, ti
     return df, title
 
 def plotLayerNodes(epochs, savefig=True):
+    """
+    Runs gridsearch for NeuralNetwork using 3 activation functions: sigmoid, tanh and RELU.
+    Uses the breast cancer dataset which is scaled and split into test and train. Search for layer and nodes.
+    Uses calcLayerNodes() which returns the dataframes which is then plotted and saved in Plots/Classification/
+
+    Args:
+        epochs (int) : Number of epochs used for training.
+        savefig (boolean) : Wether to save figure or not, deafult=True.
+    """
     path = "./Plots/Classification"
     pathlib.Path(path).mkdir(parents=True, exist_ok=True)
 
@@ -182,6 +240,10 @@ def plotLayerNodes(epochs, savefig=True):
 
 #Run accuracy vs epochs for sigmoid
 def runAccTestTrain():
+    """
+    Plots test and training MSE using the breast cancer data set. Using the NeuralNetwork class
+    with 2 layers with 16 nodes in each. Activation function set to sigmoid. Saves fig in /Plots/Classification
+    """
     path = "./Plots/Classification"
     pathlib.Path(path).mkdir(parents=True, exist_ok=True)
 
@@ -227,22 +289,27 @@ def runAccTestTrain():
 
 #LogisticRegression
 def calcLogReg(X_train_, X_test_, Y_train, Y_test, epochs, act, actDeriv, title):
-
     """
-    ep = 1
-    lr_ = 1e-4
-    dnn = LogRegClass(X_train_, Y_train, sigmoid, sigmoid_deriv, epochs = ep, eta = lr_, lmbd=0)
-    dnn.layers[-1].sigma = sigmoid
-    dnn.layers[-1].sigma_d = sigmoid_deriv
-    dnn.train(X_test_, Y_test, calcAcc=True)
-    """
-    #eta_vals = np.linspace(1e-4,1e0,3)
-    eta_vals = np.array([1e-5, 1e-4, 1e-3, 1e-2, 1e-1, 1e0, 10,50])
-    lmbd_vals = np.array([1e-3, 1e-2, 1e-1, 0, 1, 10, 50, 200])
+    Calculates the best test accuracy using gridsearch of set values for eta and lambda parameter.
+    Returns a pandas dataframe including all the values from Test_accuracy.
+    Makes use of the simplified network structure with the LogisticRegression class.
 
-    #Col = learning rate,  Rows = lambdas
-    Train_accuracy=np.zeros((len(lmbd_vals), len(eta_vals)))      #Define matrices to store accuracy scores as a function
-    Test_accuracy=np.zeros((len(lmbd_vals), len(eta_vals)))       #of learning rate and number of hidden neurons for
+    Args:
+		X_train_ (ndarray) : Array containing training data, in this case scaled
+		X_test_ (ndarray) : Array containing test data, in this case scaled
+        Y_train (ndarray) : Array containing training data for targets
+		Y_test (ndarray) : Array containing test data for targets
+        epochs (int) : Number of epochs which the netowrk will train
+        act (function) : Activation unction of which the hidden layers will use.
+        act_deriv (function) : The derivative of the chosen activation function
+        title (str) : Name of activation function which is tested
+
+
+	Returns:
+		df (pd.DataFrame) : Includes all the results for best accuracy found product of the gridsearch.
+                            Col = eta values and rows = lambda values
+        title ("str") : Name of activation function which is tested returned to identify dataframe.
+    """
 
     bestVal = [0, 0, 0]
     for i, etaValue in enumerate(eta_vals):
@@ -274,59 +341,81 @@ def calcLogReg(X_train_, X_test_, Y_train, Y_test, epochs, act, actDeriv, title)
     return df, title
 
 def plotLogRegAct(epochs, savefig=True):
-        path = "./Plots/LogReg"
-        pathlib.Path(path).mkdir(parents=True, exist_ok=True)
+    """
+    Runs gridsearch for LogisticRegression using 3 activation functions: sigmoid, tanh and RELU.
+    Uses the breast cancer dataset which is scaled and split into test and train.
+    Uses calcLogReg() which returns the dataframes which is then plotted and saved in Plots/LogReg/
 
-        seed = 32455
-        np.random.seed(seed)
-        #loading data
-        cancer = load_breast_cancer()
+    Args:
+        epochs (int) : Number of epochs used for training.
+        savefig (boolean) : Wether to save figure or not, deafult=True.
+    """
+    path = "./Plots/LogReg"
+    pathlib.Path(path).mkdir(parents=True, exist_ok=True)
 
-        inputs = cancer.data
-        targets = cancer.target
-        labels = cancer.feature_names[0:30]
+    seed = 32455
+    np.random.seed(seed)
+    #loading data
+    cancer = load_breast_cancer()
 
-        #Converting to one-hot vectors
-        x = inputs
-        y = targets
+    inputs = cancer.data
+    targets = cancer.target
+    labels = cancer.feature_names[0:30]
 
-        #Splitting into train and test data
-        X_train, X_test, Y_train, Y_test = train_test_split(x, y,test_size=1/4)
-        X_train_, X_test_, Y_train_, Y_test_ = scale(X_train, X_test, Y_train, Y_test)
+    #Converting to one-hot vectors
+    x = inputs
+    y = targets
 
-        dfSig, titleSig = calcLogReg(X_train_, X_test_, Y_train, Y_test,epochs, sigmoid, sigmoid_deriv, title="Sigmoid")
-        dfTanh, titleTanh = calcLogReg(X_train_, X_test_, Y_train, Y_test,epochs, tanh, tanh_deriv, title="Tanh")
-        dfRelu, titleRelu = calcLogReg(X_train_, X_test_, Y_train, Y_test,epochs, relu, relu_deriv, title="RELU")
+    #Splitting into train and test data
+    X_train, X_test, Y_train, Y_test = train_test_split(x, y,test_size=1/4)
+    X_train_, X_test_, Y_train_, Y_test_ = scale(X_train, X_test, Y_train, Y_test)
 
-        fig, (ax1, ax2, ax3) = plt.subplots(ncols=3, figsize=(16,6), sharey=True, tight_layout=True)
-        #fig.tight_layout(rect=[0, 0.1, 1, 0.92])
-        plt.rc('axes', titlesize=16)
-        plt.subplots_adjust(hspace=0.1)
-        plt.suptitle(f"LogReg accuracy w/epochs={epochs}", fontsize = 20, y = 0.05)
-        ax1.title.set_text(titleSig)
-        ax2.title.set_text(titleTanh)
-        ax3.title.set_text(titleRelu)
+    dfSig, titleSig = calcLogReg(X_train_, X_test_, Y_train, Y_test,epochs, sigmoid, sigmoid_deriv, title="Sigmoid")
+    dfTanh, titleTanh = calcLogReg(X_train_, X_test_, Y_train, Y_test,epochs, tanh, tanh_deriv, title="Tanh")
+    dfRelu, titleRelu = calcLogReg(X_train_, X_test_, Y_train, Y_test,epochs, relu, relu_deriv, title="RELU")
 
-        ax1 = sns.heatmap(dfSig,  ax=ax1, cbar=False, annot=True, annot_kws={"fontsize":11}, fmt=".1%" )
-        ax2 = sns.heatmap(dfTanh,  ax=ax2, cbar=False, annot=True, annot_kws={"fontsize":11}, fmt=".1%")
-        ax3 = sns.heatmap(dfRelu, ax=ax3, cbar=True, annot=True, annot_kws={"fontsize":11}, fmt=".1%")
+    fig, (ax1, ax2, ax3) = plt.subplots(ncols=3, figsize=(16,6), sharey=True, tight_layout=True)
+    #fig.tight_layout(rect=[0, 0.1, 1, 0.92])
+    plt.rc('axes', titlesize=16)
+    plt.subplots_adjust(hspace=0.1)
+    plt.suptitle(f"LogReg accuracy w/epochs={epochs}", fontsize = 20, y = 0.05)
+    ax1.title.set_text(titleSig)
+    ax2.title.set_text(titleTanh)
+    ax3.title.set_text(titleRelu)
 
-        axs = [ax1, ax2, ax3]
-        ax1.set(ylabel="Lambda")
-        ax1.set(xlabel="Eta")
-        ax3.set(xlabel="Eta")
-        fig.subplots_adjust(wspace=0.001)
-        if savefig:
-            plt.savefig(f"{path}/LogTest_EtaLambda_{epochs}.pdf", dpi=300)
-        #plt.show()
+    ax1 = sns.heatmap(dfSig,  ax=ax1, cbar=False, annot=True, annot_kws={"fontsize":11}, fmt=".1%" )
+    ax2 = sns.heatmap(dfTanh,  ax=ax2, cbar=False, annot=True, annot_kws={"fontsize":11}, fmt=".1%")
+    ax3 = sns.heatmap(dfRelu, ax=ax3, cbar=True, annot=True, annot_kws={"fontsize":11}, fmt=".1%")
+
+    axs = [ax1, ax2, ax3]
+    ax1.set(ylabel="Lambda")
+    ax1.set(xlabel="Eta")
+    ax3.set(xlabel="Eta")
+    fig.subplots_adjust(wspace=0.001)
+    if savefig:
+        plt.savefig(f"{path}/LogTest_EtaLambda_{epochs}.pdf", dpi=300)
+    #plt.show()
 
 
 #Regression
 def calcRegression(X_train_, X_test_, Y_train_, Y_test_, epochs, act, actDeriv):
     """
-    Plot regression MSE in heatmap for different values of eta and lambda.
-    If value == 0, its consideren NaN value and unusuable. Set to 0, to not ruin
-    color scale in heatmap.
+    Calculates regression MSE in heatmap for different values of eta and lambda.
+    If value == 0, its considered NaN value and unusuable. Set to 0, to not ruin
+    color scale in heatmap. Returns the datafram containing results for best MSE
+
+    Args:
+		X_train_ (ndarray) : Array containing training data, in this case scaled
+		X_test_ (ndarray) : Array containing test data, in this case scaled
+        Y_train (ndarray) : Array containing training data for targets
+		Y_test (ndarray) : Array containing test data for targets
+        epochs (int) : Number of epochs which the netowrk will train
+        act (function) : Activation unction of which the hidden layers will use.
+        act_deriv (function) : The derivative of the chosen activation function
+
+	Returns:
+		df (pd.DataFrame) : Includes all the results for best accuracy found product of the gridsearch.
+                            Col = eta values and rows = lambda values
     """
     eta_vals = np.logspace(-7, 1, 9)
     lmbd_vals = np.logspace(-5, 0, 6)
@@ -346,7 +435,7 @@ def calcRegression(X_train_, X_test_, Y_train_, Y_test_, epochs, act, actDeriv):
             dnn.layers[-1].sigma_d = linear_deriv
             dnn.train(X_test_, Y_test_, calcMSE = True)
             mse = dnn.get_MSEtest()
-            bestMSE = mse[np.argmin(mse)]
+            bestMSE = mse[np.argmin(mse)] #pulls the lowest value there is
             #mseValEnd = mse[-1]
             MSE_test[j, i] = bestMSE
             #print(bestMSE)
@@ -356,6 +445,14 @@ def calcRegression(X_train_, X_test_, Y_train_, Y_test_, epochs, act, actDeriv):
     return df
 
 def runPlotEtaLambdaRegr(epochs, savefig=True):
+    """
+    Using FrankeFunction data is genereated and the data is scaled. Then using the calcRegression()
+    the gridsearch is performed which returns dataframe. Only sigmoid is used as activation function.
+    This is then plotted and saved in Plots/Regression/ folder.
+
+    Args:
+        epochs (int) : Number of epochs used for training.
+    """
     path = "./Plots/Regression"
     pathlib.Path(path).mkdir(parents=True, exist_ok=True)
 
@@ -394,6 +491,7 @@ def runPlotRegrAct(showruninfo=False):
     Simple function plots MSE for 3 diff activation functions with the data genereated by
     f(x) = 1 + 5*x + 3*x**2 over 30 000 datapoints. Runs it through network with 2 Layers
     and 16 nodes in each. Scaled data is used to improve performance.
+    Saves figure to /Plots/Regression
     """
     if showruninfo:
         print("Plots MSE for different activation functions for the NeuralNetwork (Sigmoid, RELU, Tanh)")
@@ -466,6 +564,11 @@ def runPlotRegrAct(showruninfo=False):
 
 #SK learn logistic regression
 def runSklearnLogreg():
+    """
+    Function which using the load_breast_cancer dataset calculates the accuracy using
+    sk learn LogisticRegression module for a range of epochs, both for test and training data.
+    Which to be used for comparison.
+    """
     from sklearn.linear_model import LogisticRegression
 
     path = "./Plots/LogReg"
@@ -512,8 +615,11 @@ def runSklearnLogreg():
 
 
 
-#Run all plots for Classification. Eta vs lambda. Layer vs nodes. Logistic regression for 3 diff func
+
 def runClassiAcc():
+    """
+    Runs all plots for Classification. Eta vs lambda. Layer vs nodes. Logistic regression for 3 diff epochs.
+    """
     plotEtaLambda(epochs=30)
     plotLayerNodes(epochs=30)
 
@@ -533,7 +639,7 @@ if __name__ == "__main__":
     #runPlotEtaLambdaRegr(epochs=10000) # 124 minutes
 
     #Regression activation funcs (task c)
-    runPlotRegrAct()
+    #runPlotRegrAct()
 
     #Classification (task d+task e)
     #runAccTestTrain() #Accuracy vs epochs for Sigmoid.

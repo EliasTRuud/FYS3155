@@ -174,7 +174,25 @@ def gradient_decent(X, x, y, beta, lr, n_iter, momentum=0, batch_size=20, useAda
     return beta, MSE_list, beta_list
 
 def calcSGDGridsearch(X, x, y, epochs, batch_size, optimizer=None):
+    """
+    Does the gridsearch for a set values of eta and lambda values. Optimizer is set
+    in the argument.
 
+    Args:
+		X (ndarray) : 2D Feature matrix (e.g X = np.c_[np.ones((n,1)), x, x**2] #design matrix)
+		x (ndarray) : 1-dimensional array including all the datapoints, used for continually calculating MSE for each epoch
+        y (ndarray) : Targets which the model will try to reach.
+        epochs (int) : Number of epochs which it will run.
+        batchsize (int) : Size of batch which the model will train on. Large batch_size means more accurate gradients, but more computation needed.
+        optimizer (str) : Which optimizer to use ,default=None
+	Returns:
+		df (pd.DataFrame) :
+        bestMSE (float) : The best mean squared error found.
+        bestBeta (ndarray) : A 1-dim array containing 3 values [B0, B1, B2] for the polynomial which are updated with SGD
+        bestMSElist (ndarray) : For the best eta and lambda, we store the MSEvsEpochs list.
+        bestEta (float) : Eta value linked with best MSE.
+        bestLmbd (float) : Lambda value linked with best MSE.
+    """
     M = batch_size
     eta_vals = np.array([1e-4, 1e-3, 1e-2, 1e-1, 1e0, 10])
     lmbd_vals = np.array([0, 1e-5, 1e-4, 1e-3, 1e-2])
@@ -222,7 +240,24 @@ def calcSGDGridsearch(X, x, y, epochs, batch_size, optimizer=None):
     return df, bestMSE, bestBeta, bestMSElist, bestEta, bestLmbd
 
 def runPlotsSGD(batchsize, epochs, showruninfo=False):
+    """
+    Runs the calculations for stochastic gradient descent with different optimizers.
+    Searches for best eta and lambda value. This grid searchs and stored in dataframed.
+    Which is then plotted with seaborn and saved to /Plotd/GradDescent/
 
+    Methods is tested with a simple 2nd degree polynomial with 10 000 datapoints with
+    some added noise. Additionally use sklearn OLS and calculate MSE for comparison.
+
+    Args:
+        batchsize (int) : Size of batch which the model will train on. Large batch_size
+                          means more accurate gradients, but more computation needed.
+        epochs (int) : Number of epochs which it will run. More epochs in most cases leads
+                       better beta values and smaller MSE.
+        showruninfo (boolean) : Wether to show some run info.
+
+	Returns:
+
+    """
     n_epochs = epochs #epochs
     M = batchsize #batchsize
     if showruninfo:
@@ -233,7 +268,7 @@ def runPlotsSGD(batchsize, epochs, showruninfo=False):
     n = 10000
     x = np.random.rand(n,1)
     #Analytical value. Static learning rate.
-    y = 2+3*x+4*x*x+0.1*np.random.rand(n,1)*0.2
+    y = 2+3*x+4*x*x+0.1*np.random.rand(n,1)*0.2 #added noise
 
     X = np.c_[np.ones((n,1)), x, x**2] #design matrix
     XT_X = X.T @ X
