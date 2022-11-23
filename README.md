@@ -4,9 +4,9 @@ In this project we implement codes which we explore Stochastic Gradient Descent 
 Make a feed forward neural network using basic SGD and apply it to regression(Frankie) and classification problem(sklearn breast cancer).
 Then use a simplified network with no hidden layers as LogisticRegression class.
 
-Search for paramters: lambda and eta for regression. As well as layer vs nodes for classification. Using different activation functions: sigmoid, tanh and RELU
+Search for parameters: lambda and eta for regression. As well as layer vs nodes for classification. Using different activation functions: sigmoid, tanh and RELU
 
-Note: The Latex file was being difficult when it came to figures placement. Resulting in most forcing itself below most of the text. Tried referecing as much as possible to the figures. Thanks for understanding, maybe you have a easy fix. Tried using [!htb] etc
+Note: The Latex file was being difficult when it came to figures placement. Resulting in most forcing itself below most of the text. Tried referencing as much as possible to the figures. Thanks for understanding, maybe you have a easy fix. Tried using [!htb] etc.
 
 ## Requirements
 
@@ -38,10 +38,10 @@ This should produce all the main plots in the report. A couple additional plots 
 
 The algorithms are coded into different files:
 
-1. NeuralNetwork.py - 
+1. NeuralNetwork.py - Contains the class Layer and NeuralNetwork.
 
-2. functions.py -
+2. functions.py - Contains all the code for the different activation functions. As well as FrankeFunction() and scale() which scales the features and targets.
 
-3. genResults.py -
+3. genResults.py - Includes funtions for gridsearch and plotting various figures for regression, classification and  logistic regression.
 
-4. GradDescent.py -
+4. GradDescent.py - Code for various gradient descent with different optimizers. Additionally plotting for the gridsearc.
