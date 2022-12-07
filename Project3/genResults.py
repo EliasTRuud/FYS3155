@@ -42,7 +42,10 @@ for feature in df.columns:
 for i in range(1, 9):
     df.insert(loc=len(df.columns), column=f"AGE_GROUP_{i}",value=0)
     df[f"AGE_GROUP_{i}"] = df["AGE"].apply(lambda x: 1 if (x>=(i-1)*15 and x<i*15) else 0)
-    print((i-1)*15, i*15)
 
 df = df.drop(columns=["AGE"])
+
+df["HIGH_RISK"] = df["DEATH"] + df["INTUBED"] + df["ICU"]
+df.HIGH_RISK = df.HIGH_RISK.apply(lambda x: 1 if x>0 else 0)
+
 print(df)
