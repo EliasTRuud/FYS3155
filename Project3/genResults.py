@@ -39,13 +39,17 @@ for feature in df.columns:
         df[feature] = (df[feature] == 2) #bool: True if == 2, false if not
         df[feature] = df[feature].astype(int) #convert bool to int: true = 1, false = 0
 
-for i in range(1, 9):
-    df.insert(loc=len(df.columns), column=f"AGE_GROUP_{i}",value=0)
-    df[f"AGE_GROUP_{i}"] = df["AGE"].apply(lambda x: 1 if (x>=(i-1)*15 and x<i*15) else 0)
+age_groups = [0, 18, 30, 40, 50, 65, 75, 85, 121]
+for i in range(len(age_groups)-1):
+    print(f"age_start {age_groups[i]} agestop {age_groups[i+1]-1}")
+    df.insert(loc=len(df.columns), column=f"AGE_GROUP_{i+1}",value=0)
+    df[f"AGE_GROUP_{i+1}"] = df["AGE"].apply(lambda x: 1 if (x>age_groups[i] and x<age_groups[i+1]-1) else 0)
 
 df = df.drop(columns=["AGE"])
 
 df["HIGH_RISK"] = df["DEATH"] + df["INTUBED"] + df["ICU"]
 df.HIGH_RISK = df.HIGH_RISK.apply(lambda x: 1 if x>0 else 0)
 
-print(df)
+df = df.drop(columns=["DEATH", "INTUBED", "ICU"])
+
+print(df.head())
