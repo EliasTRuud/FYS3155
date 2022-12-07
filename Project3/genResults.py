@@ -36,8 +36,8 @@ for feature in df.columns:
 
 for feature in df.columns:
     if feature != "AGE":
-        df[feature] = df[feature] == 2
-        df[feature] = df[feature].astype(int)
+        df[feature] = (df[feature] == 2) #bool: True if == 2, false if not
+        df[feature] = df[feature].astype(int) #convert bool to int: true = 1, false = 0
 
 for i in range(1, 9):
     df.insert(loc=len(df.columns), column=f"AGE_GROUP_{i}",value=0)
