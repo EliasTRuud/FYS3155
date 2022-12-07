@@ -20,7 +20,7 @@ df = pd.read_csv("covid_data.csv")
 # df = pd.read_csv("covid_df.csv", low_memory = False)
 print(df.shape)
 df = df.copy()
-df.drop(columns= ["MEDICAL_UNIT"])
+df = df.drop(columns= ["MEDICAL_UNIT"])
 
 df_columns = df.columns
 #print(df_columns)
@@ -31,18 +31,21 @@ for feature in df_columns:
     elif feature == "CLASIFFICATION_FINAL":
         df.drop(df.loc[(df[feature] > 3)].index, inplace=True)
 
-df.insert(loc=21,column='DEATH',value=0)
+df.insert(loc=len(df.columns),column='DEATH',value=0)
 df["DEATH"] = df["DEATH"].where(df["DATE_DIED"] != "9999-99-99", 1)
 df["DEATH"] = df["DEATH"].where(df["DATE_DIED"] == "9999-99-99", 2)
-df.drop(columns=["DATE_DIED"])
+df = df.drop(columns=["DATE_DIED"])
 
+df_columns = df.columns
 for feature in df_columns:
     if feature != "AGE":
         df[feature] = df[feature] == 2
         df[feature] = df[feature].astype(int)
 
 for i in range(1, 9):
-    df[f"AGE_GROUP_{i}"] = df["AGE"]
-    df[f"AGE_GROUP_{i}"] = df[f"AGE_GROUP_{i}"].apply(lambda x: 1 if (x>=(i-1)*15 and x<i*15) else 0)
+    df.insert(loc=len(df.columns), column=f"AGE_GROUP_{i}",value=0)
+    df[f"AGE_GROUP_{i}"] = df["AGE"].apply(lambda x: 1 if (x>=(i-1)*15 and x<i*15) else 0)
+    print((i-1)*15, i*15)
 
+df = df.drop(columns=["AGE"])
 print(df)
