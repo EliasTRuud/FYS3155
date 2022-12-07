@@ -6,13 +6,9 @@ from sklearn.model_selection import train_test_split
 
 import time
 
-df = pd.read_csv("covid_df.csv")
-df.insert(loc=21,column='DEATH',value=0)
+pd.set_option("display.max_columns", None)
+df = pd.read_csv("covid_data.csv")
 
-df["DEATH"] = df["DEATH"].where(df["DATE_DIED"] != "9999-99-99", 1)
-df["DEATH"] = df["DEATH"].where(df["DATE_DIED"] == "9999-99-99", 2)
-
-df.drop(columns=["DATE_DIED"])
 #df.dropna() #no elements missing
 
 
@@ -21,8 +17,7 @@ df.drop(columns=["DATE_DIED"])
 #print(df.dtypes)
 
 #Magnus
-pd.set_option("display.max_columns", None)
-df = pd.read_csv("covid_df.csv", low_memory = False)
+# df = pd.read_csv("covid_df.csv", low_memory = False)
 print(df.shape)
 df = df.copy()
 df.drop(columns= ["MEDICAL_UNIT"])
@@ -36,5 +31,19 @@ for feature in df_columns:
     elif feature == "CLASIFFICATION_FINAL":
         df.drop(df.loc[(df[feature] > 3)].index, inplace=True)
 
+df.insert(loc=21,column='DEATH',value=0)
+df["DEATH"] = df["DEATH"].where(df["DATE_DIED"] != "9999-99-99", 1)
+df["DEATH"] = df["DEATH"].where(df["DATE_DIED"] == "9999-99-99", 2)
+df.drop(columns=["DATE_DIED"])
 
-print(df.shape)
+for feature in df_columns:
+    if feature != "AGE":
+        df[feature] = df[feature] == 2
+        df[feature] = df[feature].astype(int)
+    elif feature in ignore_columns and feature != "AGE":
+        if df[feature] != 2:
+            df[feature] = 0
+        else:
+            df[feature] = 1
+
+print(df)
