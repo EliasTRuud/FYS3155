@@ -40,10 +40,9 @@ for feature in df_columns:
     if feature != "AGE":
         df[feature] = df[feature] == 2
         df[feature] = df[feature].astype(int)
-    elif feature in ignore_columns and feature != "AGE":
-        if df[feature] != 2:
-            df[feature] = 0
-        else:
-            df[feature] = 1
+
+for i in range(1, 9):
+    df[f"AGE_GROUP_{i}"] = df["AGE"]
+    df[f"AGE_GROUP_{i}"] = df[f"AGE_GROUP_{i}"].apply(lambda x: 1 if (x>=(i-1)*15 and x<i*15) else 0)
 
 print(df)
