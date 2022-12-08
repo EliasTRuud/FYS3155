@@ -2,6 +2,7 @@ from genResults import get_df
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
+from functions import get_f1
 import tensorflow as tf
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense
@@ -9,7 +10,10 @@ from tensorflow.keras import optimizers
 from tensorflow.keras import regularizers
 from tensorflow.keras.utils import to_categorical
 
-def NN_model(input_size, n_layers, n_neuron, eta, lamda, activation_func="relu"):
+def NN_model(input_size, n_layers, n_neuron, eta, lamda, metrics, activation_func="relu"):
+    """
+    Taken from lecture notes. Creates a NN model using keras.
+    """
     model = Sequential()
     for i in range(n_layers):
         if i==0:
@@ -18,17 +22,20 @@ def NN_model(input_size, n_layers, n_neuron, eta, lamda, activation_func="relu")
             model.add(Dense(n_neuron, activation=activation_func, kernel_regularizer=regularizers.l2(lamda)))
     model.add(Dense(2, activation="softmax"))
     sgd = optimizers.SGD(learning_rate=eta)
-    model.compile(loss="categorical_crossentropy", optimizer=sgd, metrics=["accuracy"])
+    model.compile(loss="categorical_crossentropy", optimizer=sgd, metrics=metrics)
     return model
 
-def keras_NN(X_train, X_test, y_train, y_test):
+def keras_NN(X_train, X_test, y_train, y_test, metrics=["accuracy"], epochs = 10, batch_size = 100):
+    """
+    Taken from lecture notes. Trains the model and collects metrics. metrics must be of type list.
+    """
+    if not(isinstance(metrics, list)): 
+        raise TypeError
     #define tunable parameters
     eta = np.logspace(-3, -1, 3)
     lamda = 0.01
     n_layers = 2
     n_neuron = np.logspace(0, 3, 4, dtype=int)
-    epochs = 1
-    batch_size = 1000
 
     
 
@@ -37,8 +44,8 @@ def keras_NN(X_train, X_test, y_train, y_test):
 
     for i in range(len(n_neuron)):
         for j in range(len(eta)):
-            print(i)
-            DNN_model = NN_model(X_train.shape[1], n_layers, n_neuron[i], eta[j], lamda)
+            print(j+i*len(eta))
+            DNN_model = NN_model(X_train.shape[1], n_layers, n_neuron[i], eta[j], lamda, metrics=metrics)
             DNN_model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size, verbose=1)
             train_accuracy[i, j] = DNN_model.evaluate(X_train, y_train)[1]
             train_accuracy[i, j] = DNN_model.evaluate(X_test, y_test)[1]
@@ -46,6 +53,9 @@ def keras_NN(X_train, X_test, y_train, y_test):
     return eta, n_neuron, train_accuracy, test_accuracy
 
 def plot_data(x,y,data,title=None):
+    """
+    Taken from lecture notes. Plots the grid search.
+    """
     # plot results
     fontsize = 16
 
@@ -90,7 +100,7 @@ def plot_data(x,y,data,title=None):
 
 if __name__ == "__main__":
     df = get_df("covid_data.csv")
-    df = df[:10000]
+    df = df.sample(n=1000, random_state=12345)
 
     target = df["HIGH_RISK"]
     inputs = df.loc[:, df.columns != "HIGH_RISK"]
@@ -102,7 +112,10 @@ if __name__ == "__main__":
 
     y_train = to_categorical(y_train)
     y_test = to_categorical(y_test)
-    eta, n_neuron, train_accuracy, test_accuracy = keras_NN(X_train, X_test, y_train, y_test)
+
+    epochs = 10
+    batch_size = 100
+    eta, n_neuron, train_accuracy, test_accuracy = keras_NN(X_train, X_test, y_train, y_test, metrics=[get_f1], epochs=epochs, batch_size=batch_size)
 
     plot_data(eta, n_neuron, train_accuracy, "Training")
     plot_data(eta, n_neuron, test_accuracy, "Testing")
