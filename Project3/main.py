@@ -9,28 +9,6 @@ from tensorflow.keras import optimizers
 from tensorflow.keras import regularizers
 from tensorflow.keras.utils import to_categorical
 
-
-df = get_df("covid_data.csv")
-
-target = df["HIGH_RISK"]
-inputs = df.loc[:, df.columns != "HIGH_RISK"]
-
-X = inputs
-y = target
-
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1)
-
-y_train = to_categorical(y_train)
-y_test = to_categorical(y_test)
-
-#define tunable parameters
-eta = np.logspace(-3, -1, 3)
-lamda = 0.01
-n_layers = 2
-n_neuron = np.logspace(0, 3, 4, dtype=int)
-epochs = 10
-batch_size = 100
-
 def NN_model(input_size, n_layers, n_neuron, eta, lamda, activation_func="relu"):
     model = Sequential()
     for i in range(n_layers):
@@ -43,19 +21,31 @@ def NN_model(input_size, n_layers, n_neuron, eta, lamda, activation_func="relu")
     model.compile(loss="categorical_crossentropy", optimizer=sgd, metrics=["accuracy"])
     return model
 
-train_accuracy = np.zeros((len(n_neuron), len(eta)))
-test_accuracy = np.zeros((len(n_neuron), len(eta)))
+def keras_NN(X_train, X_test, y_train, y_test):
+    #define tunable parameters
+    eta = np.logspace(-3, -1, 3)
+    lamda = 0.01
+    n_layers = 2
+    n_neuron = np.logspace(0, 3, 4, dtype=int)
+    epochs = 1
+    batch_size = 1000
 
-for i in range(len(n_neuron)):
-    for j in range(len(eta)):
-        print(X_train.shape)
-        DNN_model = NN_model(X_train.shape[1], n_layers, n_neuron[i], eta[j], lamda)
-        DNN_model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size, verbose=1)
-        train_accuracy[i, j] = DNN_model.evaluate(X_train, y_train)[1]
-        train_accuracy[i, j] = DNN_model.evaluate(X_test, y_test)[1]
+    
+
+    train_accuracy = np.zeros((len(n_neuron), len(eta)))
+    test_accuracy = np.zeros((len(n_neuron), len(eta)))
+
+    for i in range(len(n_neuron)):
+        for j in range(len(eta)):
+            print(i)
+            DNN_model = NN_model(X_train.shape[1], n_layers, n_neuron[i], eta[j], lamda)
+            DNN_model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size, verbose=1)
+            train_accuracy[i, j] = DNN_model.evaluate(X_train, y_train)[1]
+            train_accuracy[i, j] = DNN_model.evaluate(X_test, y_test)[1]
+
+    return eta, n_neuron, train_accuracy, test_accuracy
 
 def plot_data(x,y,data,title=None):
-
     # plot results
     fontsize = 16
 
@@ -92,6 +82,27 @@ def plot_data(x,y,data,title=None):
 
     plt.show()
 
+    
+# #from proj 2
+# import NeuralNetwork
+# from fromProj2.genResults import plotEtaLambda
+# plotEtaLambda(10, data=df)
+
 if __name__ == "__main__":
-    plot_data(eta,n_neuron, train_accuracy, 'training')
-    plot_data(eta,n_neuron, test_accuracy, 'testing')
+    df = get_df("covid_data.csv")
+    df = df[:10000]
+
+    target = df["HIGH_RISK"]
+    inputs = df.loc[:, df.columns != "HIGH_RISK"]
+
+    X = inputs
+    y = target
+
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1)
+
+    y_train = to_categorical(y_train)
+    y_test = to_categorical(y_test)
+    eta, n_neuron, train_accuracy, test_accuracy = keras_NN(X_train, X_test, y_train, y_test)
+
+    plot_data(eta, n_neuron, train_accuracy, "Training")
+    plot_data(eta, n_neuron, test_accuracy, "Testing")
