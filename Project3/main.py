@@ -2,13 +2,19 @@ from genResults import get_df
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
-from functions import get_f1
+from functions import get_f1, matthews_correlation
+# from tfa.metrics import MatthewsCorrelationCoefficient 
 import tensorflow as tf
+import seaborn as sns
+import pandas as pd
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense
 from tensorflow.keras import optimizers
 from tensorflow.keras import regularizers
 from tensorflow.keras.utils import to_categorical
+
+seed = 12345
+np.random.seed(seed)
 
 def NN_model(input_size, n_layers, n_neuron, eta, lamda, metrics, activation_func="relu"):
     """
@@ -22,7 +28,7 @@ def NN_model(input_size, n_layers, n_neuron, eta, lamda, metrics, activation_fun
             model.add(Dense(n_neuron, activation=activation_func, kernel_regularizer=regularizers.l2(lamda)))
     model.add(Dense(2, activation="softmax"))
     sgd = optimizers.SGD(learning_rate=eta)
-    model.compile(loss="categorical_crossentropy", optimizer=sgd, metrics=metrics)
+    model.compile(loss="binary_crossentropy", optimizer="adam", metrics=metrics)
     return model
 
 def keras_NN(X_train, X_test, y_train, y_test, metrics=["accuracy"], epochs = 10, batch_size = 100):
@@ -48,51 +54,22 @@ def keras_NN(X_train, X_test, y_train, y_test, metrics=["accuracy"], epochs = 10
             DNN_model = NN_model(X_train.shape[1], n_layers, n_neuron[i], eta[j], lamda, metrics=metrics)
             DNN_model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size, verbose=1)
             train_accuracy[i, j] = DNN_model.evaluate(X_train, y_train)[1]
-            train_accuracy[i, j] = DNN_model.evaluate(X_test, y_test)[1]
+            test_accuracy[i, j] = DNN_model.evaluate(X_test, y_test)[1]
 
-    return eta, n_neuron, train_accuracy, test_accuracy
+    train_accuracy_df = pd.DataFrame(train_accuracy, columns=eta, index=n_neuron)
+    test_accuracy_df = pd.DataFrame(test_accuracy, columns=eta, index=n_neuron)
+    return train_accuracy_df, test_accuracy_df
 
-def plot_data(x,y,data,title=None):
-    """
-    Taken from lecture notes. Plots the grid search.
-    """
-    # plot results
-    fontsize = 16
-
-
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    cax = ax.matshow(data, interpolation='nearest', vmin=0, vmax=1)
-    
-    cbar = fig.colorbar(cax)
-    cbar.ax.set_ylabel('accuracy (%)',rotation=90,fontsize=fontsize)
-    cbar.set_ticks([0,.2,.4,0.6,0.8,1.0])
-    cbar.set_ticklabels(['0%','20%','40%','60%','80%','100%'])
-
-    # put text on matrix elements
-    for i, x_val in enumerate(np.arange(len(x))):
-        for j, y_val in enumerate(np.arange(len(y))):
-            c = "${0:.1f}\\%$".format( 100*data[j,i])  
-            ax.text(x_val, y_val, c, va='center', ha='center')
-
-    # convert axis vaues to to string labels
-    x = [str(i) for i in x]
-    y = [str(i) for i in y]
-
-
-    ax.set_xticklabels(['']+x)
-    ax.set_yticklabels(['']+y)
-
-    ax.set_xlabel('$\\mathrm{learning\\ rate}$',fontsize=fontsize)
-    ax.set_ylabel('$\\mathrm{hidden\\ neurons}$',fontsize=fontsize)
-    if title is not None:
-        ax.set_title(title)
-
-    plt.tight_layout()
-
+def plot_data(data,title=None):
+    plt.rc('axes', titlesize=16)
+    plt.subplots_adjust(hspace=0.1)
+    fig, ax= plt.subplots(figsize=(8, 8), sharey=True, tight_layout=True)
+    ax.set_title(title)
+    ax = sns.heatmap(data, ax=ax, cbar=True, annot=True, annot_kws={"fontsize":11}, fmt=".3%")
+    ax.set(xlabel="eta", ylabel="n_neuron")
+    fig.subplots_adjust(wspace=0.001)
     plt.show()
 
-    
 # #from proj 2
 # import NeuralNetwork
 # from fromProj2.genResults import plotEtaLambda
@@ -100,7 +77,7 @@ def plot_data(x,y,data,title=None):
 
 if __name__ == "__main__":
     df = get_df("covid_data.csv")
-    df = df.sample(n=1000, random_state=12345)
+    df = df.sample(n=10000, random_state=seed)
 
     target = df["HIGH_RISK"]
     inputs = df.loc[:, df.columns != "HIGH_RISK"]
@@ -113,9 +90,11 @@ if __name__ == "__main__":
     y_train = to_categorical(y_train)
     y_test = to_categorical(y_test)
 
+    print("Total percentage not high risk ",df.loc[df["HIGH_RISK"] == 1].shape[0]/df.shape[0]*100, "%")
+
     epochs = 10
     batch_size = 100
-    eta, n_neuron, train_accuracy, test_accuracy = keras_NN(X_train, X_test, y_train, y_test, metrics=[get_f1], epochs=epochs, batch_size=batch_size)
 
-    plot_data(eta, n_neuron, train_accuracy, "Training")
-    plot_data(eta, n_neuron, test_accuracy, "Testing")
+    train_accuracy, test_accuracy = keras_NN(X_train, X_test, y_train, y_test, metrics=[matthews_correlation], epochs=epochs, batch_size=batch_size)
+    plot_data(train_accuracy, "Training")
+    plot_data(test_accuracy, "Testing")
