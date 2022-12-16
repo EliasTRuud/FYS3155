@@ -39,15 +39,20 @@ def NN_model(input_size, metrics, grid_search, n_layers=None, n_neuron=None, eta
             model.add(Dense(n_neuron, activation=activation_func, kernel_regularizer=regularizers.l2(lamda)))
     model.add(Dense(2, activation="softmax"))
     sgd = optimizers.SGD(learning_rate=eta)
-    model.compile(loss="binary_crossentropy", optimizer="adam", metrics=metrics)
+    # "adam"
+    model.compile(loss="binary_crossentropy", optimizer=sgd, metrics=metrics)
     return model
 
 def keras_NN(X_train, X_test, y_train, y_test, metrics=["accuracy"], epochs = 10, batch_size = 100, grid_search=None):
     """
     Taken from lecture notes. Trains the model and collects metrics. metrics must be of type list.
+    The grid_search feature lets you seach for the best combination of two different parameters,
+    it does not work with more than two. The feature takes in four parameters, which are assumed to
+    be eta, n_neurons, n_layers and lamda, other variables are not supported.
     """
     if not(isinstance(metrics, list)): 
         raise TypeError
+    
     #define tunable parameters
     if not(isinstance(grid_search, list)):
         parameter1 = np.logspace(-3, -1, 3) #eta
@@ -55,6 +60,7 @@ def keras_NN(X_train, X_test, y_train, y_test, metrics=["accuracy"], epochs = 10
         parameter3 = 2 #n_layers
         parameter4 = 0.01 #lambda
         parameters = [parameter1, parameter2, parameter3, parameter4]
+        parameters_names = ["eta", "n_neurons", "n_layers", "lamda"]
     else:
         parameters = [0, 0, 0, 0]
         parameters_names = [0, 0, 0, 0]
@@ -77,7 +83,8 @@ def keras_NN(X_train, X_test, y_train, y_test, metrics=["accuracy"], epochs = 10
 
     for i in range(len(parameter2)):
         for j in range(len(parameter1)):
-            print(j+i*len(parameter1))
+            print("combination: ", j+i*len(parameter1)+1, "out of ", len(parameter1)*len(parameter2),
+                  f"\n{parameters_names[0]}={parameter1[j]}, {parameters_names[1]}={parameter2[i]}")
             DNN_model = NN_model(X_train.shape[1], metrics=metrics, 
                                 grid_search=[[parameter1[j], parameters_names[0]], [parameter2[i], parameters_names[1]],
                                              [parameter3, parameters_names[2]], [parameter4, parameters_names[3]]]
@@ -91,6 +98,9 @@ def keras_NN(X_train, X_test, y_train, y_test, metrics=["accuracy"], epochs = 10
     return train_accuracy_df, test_accuracy_df
 
 def plot_data(data, labels, title=None):
+    """
+    Plots the data so that we can determine their
+    """
     plt.rc('axes', titlesize=16)
     plt.subplots_adjust(hspace=0.1)
     fig, ax= plt.subplots(figsize=(8, 8), sharey=True, tight_layout=True)
@@ -101,7 +111,7 @@ def plot_data(data, labels, title=None):
     plt.show()
 
 if __name__ == "__main__":
-    df = get_df("covid_data.csv")
+    df = get_df("covid_data.csv", n=10000)
     # df = df.sample(n=10000, random_state=seed)
     print(df["HIGH_RISK"].value_counts()[1], df["HIGH_RISK"].value_counts()[0])
     target = df["HIGH_RISK"]
@@ -119,20 +129,22 @@ if __name__ == "__main__":
 
     epochs = 10
     batch_size = 100
-    metrics = [matthews_correlation] #, RSquare]
-    # metrics = ["accuracy"]
+    # metrics = [matthews_correlation] #, RSquare]
+    metrics = ["accuracy"]
 
-    # eta = np.logspace(-3, 2, 6) #eta
-    eta = 0.1
-    n_neurons = np.logspace(1, 2, 2, dtype=int) #n_neurons
-    # n_neurons = 10
-    n_layers = np.linspace(2, 5, 3, dtype=int) #n_layers
-    # n_layers = 2
-    lamda = 0.01 #lambda
-    # lamda = np.logspace(-3, 2, 6)
+    eta = np.logspace(-3, 2, 6) #eta
+    # eta = 0.1
+    # n_neurons = np.logspace(1, 2, 2, dtype=int) #n_neurons
+    n_neurons = 10
+    # n_layers = np.linspace(2, 5, 3, dtype=int) #n_layers
+    n_layers = 3
+    # lamda = 0.01 #lambda
+    lamda = np.logspace(-3, 2, 6)
+
+    grid_search = [[eta, "eta"], [n_neurons, "n_neurons"], [n_layers, "n_layers"], [lamda, "lamda"]]    
 
     train_accuracy, test_accuracy = keras_NN(X_train, X_test, y_train, y_test, metrics=metrics, epochs=epochs, 
-                                             batch_size=batch_size, grid_search=[[eta, "eta"], [n_neurons, "n_neurons"],
-                                             [n_layers, "n_layers"], [lamda, "lamda"]])
-    plot_data(train_accuracy, ["n_neurons", "n_layers"], "Training")
-    plot_data(test_accuracy, ["n_neurons", "n_layers"], "Testing")
+                                             batch_size=batch_size, grid_search=grid_search)
+
+    plot_data(train_accuracy, [feature_name for feature, feature_name in grid_search if isinstance(feature, np.ndarray)], "Training")
+    plot_data(test_accuracy, [feature_name for feature, feature_name in grid_search if isinstance(feature, np.ndarray)], "Testing")

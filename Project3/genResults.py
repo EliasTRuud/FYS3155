@@ -99,29 +99,24 @@ def define_target(df, target_name, target_par):
     return df
 
 def balance(df, target_name):
-    # n_positive_targets = df[target_name].value_counts()[1]
-    # df = df.sample(n=10000, random_state=seed)
+    """
+    Downsamples the dataset so that there are an equal amount of true targets as false.
+    The majority is assumed to be True.
+    """
     df_majority = df.loc[df[target_name] == 1]
     df_minority = df.loc[df[target_name] == 0]
     df_majority_downsampled = df_majority.sample(n=df[target_name].value_counts()[0], random_state=seed)
-
-    # # Upsample minority class
-    # df_minority_upsampled = resample(df_minority, 
-    #                                 replace=True,     # sample with replacement
-    #                                 n_samples= df[target_name].value_counts()[0],
-    #                                 random_state=seed) # reproducible results
-
-    # Combine majority class with upsampled minority class
+    
     df_upsampled = pd.concat([df_minority, df_majority_downsampled])
 
     return df_upsampled
 
-def get_df(filename, filter=["AGE", "CLASIFFICATION_FINAL", "ICU", "INTUBED", "PREGNANT"],
+def get_df(filename, n=10000, filter=["AGE", "CLASIFFICATION_FINAL", "ICU", "INTUBED", "PREGNANT"],
             age_groups=[0, 18, 30, 40, 50, 65, 75, 85, 121], target_name="HIGH_RISK",
             target_par=["DEATH", "INTUBED", "ICU"]):
     """
     Applies all functions so that you can easily get the data in a seperate file.
-    In order to make experimentation extra parameters are included, but to make it
+    For experimentation purposes extra parameters are included, but to make it
     easier to use the program they all have default values.
     """
     df = open_df(filename)
@@ -131,7 +126,7 @@ def get_df(filename, filter=["AGE", "CLASIFFICATION_FINAL", "ICU", "INTUBED", "P
     df = create_age_groups(df, age_groups)
     df = define_target(df, target_name, target_par)
     df = balance(df, target_name)
-    return df
+    return df.sample(n=n)
 
 if __name__ == "__main__":
     df = get_df("covid_data.csv")
