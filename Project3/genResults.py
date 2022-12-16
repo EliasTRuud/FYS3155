@@ -3,8 +3,12 @@ import pandas as pd
 from matplotlib import pyplot as plt
 import seaborn as sns
 from sklearn.model_selection import train_test_split
+from sklearn.utils import resample
 
 import time
+
+seed = 12345
+np.random.seed(seed)
 
 def open_df(filename):
     """
@@ -44,6 +48,7 @@ def filter_df(df, filter):
             df.drop(df.loc[(df[feature] == 97) | (df[feature] == 99) | (df[feature] == 98)].index, inplace=True)
         elif feature == "CLASIFFICATION_FINAL":
             df.drop(df.loc[(df[feature] > 3)].index, inplace=True)
+            df = df.drop(columns=[feature])
         elif feature == "PREGNANT":
             df["PREGNANT"].replace(97, 2) #we assume if unspecified --> not pregnant we replace with 2 = not pregnant, in dataset to avoid elminating samples of males as they contain 97-99
             df["PREGNANT"].replace(99, 2)
@@ -62,6 +67,8 @@ def convert_df_bool(df):
         elif feature != "AGE":
             df[feature] = (df[feature] <= 3)
             df[feature] = df[feature].astype(int)
+
+        df[feature] = df[feature].astype(np.float32)
     return df
 
 def create_age_groups(df, age_groups):
@@ -91,6 +98,24 @@ def define_target(df, target_name, target_par):
     df = df.drop(columns=target_par)
     return df
 
+def balance(df, target_name):
+    # n_positive_targets = df[target_name].value_counts()[1]
+    # df = df.sample(n=10000, random_state=seed)
+    df_majority = df.loc[df[target_name] == 1]
+    df_minority = df.loc[df[target_name] == 0]
+    df_majority_downsampled = df_majority.sample(n=df[target_name].value_counts()[0], random_state=seed)
+
+    # # Upsample minority class
+    # df_minority_upsampled = resample(df_minority, 
+    #                                 replace=True,     # sample with replacement
+    #                                 n_samples= df[target_name].value_counts()[0],
+    #                                 random_state=seed) # reproducible results
+
+    # Combine majority class with upsampled minority class
+    df_upsampled = pd.concat([df_minority, df_majority_downsampled])
+
+    return df_upsampled
+
 def get_df(filename, filter=["AGE", "CLASIFFICATION_FINAL", "ICU", "INTUBED", "PREGNANT"],
             age_groups=[0, 18, 30, 40, 50, 65, 75, 85, 121], target_name="HIGH_RISK",
             target_par=["DEATH", "INTUBED", "ICU"]):
@@ -105,11 +130,12 @@ def get_df(filename, filter=["AGE", "CLASIFFICATION_FINAL", "ICU", "INTUBED", "P
     df = convert_df_bool(df)
     df = create_age_groups(df, age_groups)
     df = define_target(df, target_name, target_par)
+    df = balance(df, target_name)
     return df
 
 if __name__ == "__main__":
     df = get_df("covid_data.csv")
-
+    print(df)
     # run correlation matrix and plot
     f, ax = plt.subplots(figsize=(10, 8))
     corr = df.corr()

@@ -119,6 +119,12 @@ def R2(y_data, y_model):
     """
     return 1 - np.sum((y_data - y_model)**2) / np.sum((y_data - np.mean(y_data)) ** 2)
 
+def R_squared(y, y_pred):
+  residual = tf.reduce_sum(tf.square(tf.subtract(y, y_pred)))
+  total = tf.reduce_sum(tf.square(tf.subtract(y, tf.reduce_mean(y))))
+  r2 = tf.subtract(1.0, tf.div(residual, total))
+  return r2
+
 
 def get_f1(y_true, y_pred): #taken from old keras source code
     true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
