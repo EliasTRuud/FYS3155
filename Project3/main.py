@@ -1,9 +1,10 @@
 from genResults import get_df
-# from functions import R_squared
+from functions import R2, MSE
 from tensorflow_addons.metrics import RSquare
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import confusion_matrix
 from functions import get_f1, matthews_correlation
 # from tfa.metrics import MatthewsCorrelationCoefficient 
 import tensorflow as tf
@@ -18,19 +19,20 @@ from tensorflow.keras.utils import to_categorical
 seed = 12345
 np.random.seed(seed)
 
-def NN_model(input_size, metrics, grid_search, n_layers=None, n_neuron=None, eta=None, lamda=None, activation_func="relu"):
+def NN_model(input_size, metrics, grid_search=None, n_layers=None, n_neuron=None, eta=None, lamda=None, activation_func="relu"):
     """
     Taken from lecture notes. Creates a NN model using keras.
     """
-    for parameter, parameter_name in grid_search:
-        if parameter_name == "eta":
-            eta = parameter
-        elif parameter_name == "lamda":
-            lamda = parameter
-        elif parameter_name == "n_layers":
-            n_layers = parameter
-        elif parameter_name == "n_neurons":
-            n_neuron = parameter
+    if isinstance(grid_search, list):
+        for parameter, parameter_name in grid_search:
+            if parameter_name == "eta":
+                eta = parameter
+            elif parameter_name == "lamda":
+                lamda = parameter
+            elif parameter_name == "n_layers":
+                n_layers = parameter
+            elif parameter_name == "n_neurons":
+                n_neuron = parameter
     model = Sequential()
     for i in range(n_layers):
         if i==0:
@@ -61,7 +63,7 @@ def keras_NN(X_train, X_test, y_train, y_test, metrics=["accuracy"], epochs = 10
         parameter4 = 0.01 #lambda
         parameters = [parameter1, parameter2, parameter3, parameter4]
         parameters_names = ["eta", "n_neurons", "n_layers", "lamda"]
-    else:
+    elif isinstance(grid_search, list):
         parameters = [0, 0, 0, 0]
         parameters_names = [0, 0, 0, 0]
         i = 0
@@ -110,6 +112,24 @@ def plot_data(data, labels, title=None):
     fig.subplots_adjust(wspace=0.001)
     plt.show()
 
+def single_keras_NN(X_train, X_test, y_train, y_test, eta, lamda, n_neurons, n_layers, metrics=["accuracy"], epochs = 10, batch_size = 100):
+    """
+    Produces a confusion matrix for a single model with given eta, lamda, n_neurons and n_layers.
+    """
+    DNN_model = NN_model(X_train.shape[1], metrics=metrics, eta=eta, lamda=lamda, n_neuron=n_neurons, n_layers=n_layers)
+    DNN_model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size, validation_split=0.15, verbose=1)
+    y_prediction = DNN_model.predict(X_test)
+    y_prediction = np.argmax (y_prediction, axis = 1)
+    y_test = np.argmax(y_test, axis=1)
+    #Create confusion matrix and normalizes it over predicted (columns)
+    result = confusion_matrix(y_test, y_prediction , normalize='pred')
+    plt.rc('axes', titlesize=16)
+    plt.subplots_adjust(hspace=0.1)
+    fig, ax= plt.subplots(figsize=(8, 8), sharey=True, tight_layout=True)
+    ax = sns.heatmap(result, ax=ax, cbar=True, annot=True, annot_kws={"fontsize":11}, fmt=".3%")
+    fig.subplots_adjust(wspace=0.001)
+    plt.show()
+
 if __name__ == "__main__":
     df = get_df("covid_data.csv", n=10000)
     # df = df.sample(n=10000, random_state=seed)
@@ -130,7 +150,7 @@ if __name__ == "__main__":
     epochs = 10
     batch_size = 100
     # metrics = [matthews_correlation] #, RSquare]
-    metrics = ["accuracy"]
+    metrics = [MSE]
 
     eta = np.logspace(-3, 2, 6) #eta
     # eta = 0.1
@@ -143,8 +163,13 @@ if __name__ == "__main__":
 
     grid_search = [[eta, "eta"], [n_neurons, "n_neurons"], [n_layers, "n_layers"], [lamda, "lamda"]]    
 
-    train_accuracy, test_accuracy = keras_NN(X_train, X_test, y_train, y_test, metrics=metrics, epochs=epochs, 
-                                             batch_size=batch_size, grid_search=grid_search)
+    # train_accuracy, test_accuracy = keras_NN(X_train, X_test, y_train, y_test, metrics=metrics, epochs=epochs, 
+    #                                          batch_size=batch_size, grid_search=grid_search)
 
-    plot_data(train_accuracy, [feature_name for feature, feature_name in grid_search if isinstance(feature, np.ndarray)], "Training")
-    plot_data(test_accuracy, [feature_name for feature, feature_name in grid_search if isinstance(feature, np.ndarray)], "Testing")
+    # plot_data(train_accuracy, [feature_name for feature, feature_name in grid_search if isinstance(feature, np.ndarray)], "Training")
+    # plot_data(test_accuracy, [feature_name for feature, feature_name in grid_search if isinstance(feature, np.ndarray)], "Testing")
+
+    eta = 0.1
+    lamda = 0.01
+
+    single_keras_NN(X_train, X_test, y_train, y_test, eta, lamda, n_neurons, n_layers, metrics=metrics, epochs=epochs, batch_size=batch_size)

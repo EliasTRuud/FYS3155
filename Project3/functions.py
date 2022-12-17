@@ -110,14 +110,13 @@ def MSE(y_data,y_model):
     """
     Returns Mean squared error for the target data vs model predictions. Lower meaning better
     """
-    n = np.size(y_model)
-    return np.sum((y_data-y_model)**2)/n
+    return K.mean((y_data-y_model)**2)
 
 def R2(y_data, y_model):
     """
     Returns the R2 score for the target data vs model predictions. Zero to one, one meaning best.
     """
-    return 1 - np.sum((y_data - y_model)**2) / np.sum((y_data - np.mean(y_data)) ** 2)
+    return 1 - K.sum((y_data - y_model)**2) / K.sum((y_data - K.mean(y_data)) ** 2)
 
 def R_squared(y, y_pred):
   residual = tf.reduce_sum(tf.square(tf.subtract(y, y_pred)))
@@ -135,7 +134,7 @@ def get_f1(y_true, y_pred): #taken from old keras source code
     f1_val = 2*(precision*recall)/(precision+recall+K.epsilon())
     return f1_val
 
-def matthews_correlation(y_true, y_pred):
+def matthews_correlation(y_true, y_pred): #taken from old keras source code
     y_pred_pos = K.round(K.clip(y_pred, 0, 1))
     y_pred_neg = 1 - y_pred_pos
 
