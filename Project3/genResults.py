@@ -98,7 +98,7 @@ def define_target(df, target_name, target_par):
     df = df.drop(columns=target_par)
     return df
 
-def balance(df, target_name):
+def balance_df(df, target_name):
     """
     Downsamples the dataset so that there are an equal amount of true targets as false.
     The majority is assumed to be True.
@@ -111,9 +111,9 @@ def balance(df, target_name):
 
     return df_upsampled
 
-def get_df(filename, n=10000, filter=["AGE", "CLASIFFICATION_FINAL", "ICU", "INTUBED", "PREGNANT"],
+def get_df(filename, n=None, filter=["AGE", "CLASIFFICATION_FINAL", "ICU", "INTUBED", "PREGNANT"],
             age_groups=[0, 18, 30, 40, 50, 65, 75, 85, 121], target_name="HIGH_RISK",
-            target_par=["DEATH", "INTUBED", "ICU"]):
+            target_par=["DEATH", "INTUBED", "ICU"], balance=True):
     """
     Applies all functions so that you can easily get the data in a seperate file.
     For experimentation purposes extra parameters are included, but to make it
@@ -125,7 +125,10 @@ def get_df(filename, n=10000, filter=["AGE", "CLASIFFICATION_FINAL", "ICU", "INT
     df = convert_df_bool(df)
     df = create_age_groups(df, age_groups)
     df = define_target(df, target_name, target_par)
-    df = balance(df, target_name)
+    if n == None:
+        n = len(df)
+    if balance:
+        df = balance_df(df, target_name)
     return df.sample(n=n)
 
 if __name__ == "__main__":

@@ -1,11 +1,11 @@
-from genResults import get_df
+from genResults import get_df, balance_df
 from functions import R2, MSE
 from tensorflow_addons.metrics import RSquare
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import confusion_matrix
-from functions import get_f1, matthews_correlation
+from functions import mcc
 # from tfa.metrics import MatthewsCorrelationCoefficient 
 import tensorflow as tf
 import seaborn as sns
@@ -127,11 +127,12 @@ def single_keras_NN(X_train, X_test, y_train, y_test, eta, lamda, n_neurons, n_l
     plt.subplots_adjust(hspace=0.1)
     fig, ax= plt.subplots(figsize=(8, 8), sharey=True, tight_layout=True)
     ax = sns.heatmap(result, ax=ax, cbar=True, annot=True, annot_kws={"fontsize":11}, fmt=".3%")
+    ax.set_title("Confusion matrix")
     fig.subplots_adjust(wspace=0.001)
     plt.show()
 
 if __name__ == "__main__":
-    df = get_df("covid_data.csv", n=10000)
+    df = get_df("covid_data.csv", n=10000, balance=True)
     # df = df.sample(n=10000, random_state=seed)
     print(df["HIGH_RISK"].value_counts()[1], df["HIGH_RISK"].value_counts()[0])
     target = df["HIGH_RISK"]
@@ -149,17 +150,17 @@ if __name__ == "__main__":
 
     epochs = 10
     batch_size = 100
-    # metrics = [matthews_correlation] #, RSquare]
-    metrics = [MSE]
+    metrics = [mcc] #, RSquare]
+    # metrics = ["accuracy"]
 
     eta = np.logspace(-3, 2, 6) #eta
-    # eta = 0.1
-    # n_neurons = np.logspace(1, 2, 2, dtype=int) #n_neurons
+    eta = 0.1
+    n_neurons = np.array([10, 30, 100]) #n_neurons
     n_neurons = 10
-    # n_layers = np.linspace(2, 5, 3, dtype=int) #n_layers
+    n_layers = np.linspace(2, 5, 4, dtype=int) #n_layers
     n_layers = 3
-    # lamda = 0.01 #lambda
     lamda = np.logspace(-3, 2, 6)
+    lamda = 0.01 #lambda
 
     grid_search = [[eta, "eta"], [n_neurons, "n_neurons"], [n_layers, "n_layers"], [lamda, "lamda"]]    
 
@@ -171,5 +172,24 @@ if __name__ == "__main__":
 
     eta = 0.1
     lamda = 0.01
+
+    # df_train = balance_df(df[:len(df)//4*3], "HIGH_RISK")
+    
+    # target = df_train["HIGH_RISK"]
+    # inputs = df_train.loc[:, df_train.columns != "HIGH_RISK"]
+
+    # X_train = inputs
+    # y_train = target
+
+    # df_test = df[len(df)//4*3:]
+
+    # target = df_test["HIGH_RISK"]
+    # inputs = df_test.loc[:, df_test.columns != "HIGH_RISK"]
+
+    # X_test = inputs
+    # y_test = target
+
+    # y_train = to_categorical(y_train)
+    # y_test = to_categorical(y_test)
 
     single_keras_NN(X_train, X_test, y_train, y_test, eta, lamda, n_neurons, n_layers, metrics=metrics, epochs=epochs, batch_size=batch_size)

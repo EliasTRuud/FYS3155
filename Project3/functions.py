@@ -1,9 +1,7 @@
 import numpy as np
-import matplotlib.pyplot as plt
-from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
-from sklearn.metrics import accuracy_score, mean_squared_error
 import keras.backend as K
+import tensorflow as tf
 from copy import deepcopy
 
 seed = 32455
@@ -53,17 +51,6 @@ def linear_deriv(x):
 def softmax(z):
     exp_term = np.exp(z)
     return exp_term/np.sum(exp_term, axis=1, keepdims=True)
-
-#some functions used to generate data
-def f(x):
-    return 1 + 5*x + 3*x**2
-
-def FrankeFunction(x,y):
-    term1 = 0.75*np.exp(-(0.25*(9*x-2)**2) - 0.25*((9*y-2)**2))
-    term2 = 0.75*np.exp(-((9*x+1)**2)/49.0 - 0.1*(9*y+1))
-    term3 = 0.5*np.exp(-(9*x-7)**2/4.0 - 0.25*((9*y-3)**2))
-    term4 = -0.2*np.exp(-(9*x-4)**2 - (9*y-7)**2)
-    return term1 + term2 + term3 + term4
 
 #In case we want to scale our data
 def scale(X_train, X_test, Y_train, Y_test):
@@ -124,30 +111,31 @@ def R_squared(y, y_pred):
   r2 = tf.subtract(1.0, tf.div(residual, total))
   return r2
 
+def keras_calculate_mcc_from_conf(confusion_m):
+    """tensor version of MCC calculation from confusion matrix"""
+    # as in Gorodkin (2004)
+    N = K.sum(confusion_m)
+    up = N * tf.linalg.trace(confusion_m) - K.sum(tf.matmul(confusion_m, confusion_m))
+    down_left = K.sqrt(N ** 2 - K.sum(tf.matmul(confusion_m, K.transpose(confusion_m))))
+    down_right = K.sqrt(N ** 2 - K.sum(tf.matmul(K.transpose(confusion_m), confusion_m)))
+    mcc_val = up / (down_left * down_right + K.epsilon())
+    return mcc_val
 
-def get_f1(y_true, y_pred): #taken from old keras source code
-    true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
-    possible_positives = K.sum(K.round(K.clip(y_true, 0, 1)))
-    predicted_positives = K.sum(K.round(K.clip(y_pred, 0, 1)))
-    precision = true_positives / (predicted_positives + K.epsilon())
-    recall = true_positives / (possible_positives + K.epsilon())
-    f1_val = 2*(precision*recall)/(precision+recall+K.epsilon())
-    return f1_val
 
-def matthews_correlation(y_true, y_pred): #taken from old keras source code
-    y_pred_pos = K.round(K.clip(y_pred, 0, 1))
-    y_pred_neg = 1 - y_pred_pos
+def keras_better_to_categorical(y_pred_in):
+    """tensor version of to_categorical"""
+    nclass = K.shape(y_pred_in)[1]
+    y_pred_argmax = K.argmax(y_pred_in, axis=1)
+    y_pred = tf.one_hot(tf.cast(y_pred_argmax, tf.int32), depth=nclass)
+    y_pred = tf.cast(y_pred, tf.float32)
+    return y_pred
 
-    y_pos = K.round(K.clip(y_true, 0, 1))
-    y_neg = 1 - y_pos
+def mcc(y_true, y_pred):
+    """To calculate Matthew's correlation coefficient for multi-class classification"""
+    # this is necessary to make y_pred values of 0 or 1 because
+    # y_pred may contain other value (e.g., 0.6890)
+    y_pred = keras_better_to_categorical(y_pred)
 
-    tp = K.sum(y_pos * y_pred_pos)
-    tn = K.sum(y_neg * y_pred_neg)
-
-    fp = K.sum(y_neg * y_pred_pos)
-    fn = K.sum(y_pos * y_pred_neg)
-
-    numerator = (tp * tn - fp * fn)
-    denominator = K.sqrt((tp + fp) * (tp + fn) * (tn + fp) * (tn + fn))
-
-    return numerator / (denominator + K.epsilon())
+    # now it's straightforward to calculate confusion matrix and MCC
+    confusion_m = tf.matmul(K.transpose(y_true), y_pred)
+    return keras_calculate_mcc_from_conf(confusion_m)
