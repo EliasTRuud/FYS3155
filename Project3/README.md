@@ -32,11 +32,7 @@ To produce the results LogisticRegression and DecisionTreeClassifier which print
 python main.py
 ```
 
-For the various different plots once would have to do some adjusting in the code. Examples:
-(write something here about what to edit)
-```
-write something here
-```
+To run the program, you need to use main.py. At the bottom of the file there is a ```__main__``` section where you can uncomment lines to change what variables you want to perform a grid search on and if you want to go more in detail on a single model with different parameters. All plotting should be done automatically if used correctly.
 
 ## Summary of codes
 
