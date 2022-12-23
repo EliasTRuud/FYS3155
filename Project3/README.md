@@ -1,4 +1,4 @@
-#Project 3
+Project 3
 ==============================
 In this project we explore a dataset containing COVID data (https://www.kaggle.com/datasets/meirnizri/covid19-dataset).
 The dataset  contains an enormous number of anonymized patient-related information including pre-conditions. The raw dataset consists of 21 unique features and 1,048,576 unique patients. In the Boolean features, 1 means "yes" and 2 means "no". values as 97 and 99 are missing data.
