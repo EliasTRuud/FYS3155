@@ -191,7 +191,7 @@ def simpleDecisionTree(showSearch=False, showValue=True):
 
     if showSearch:
         param_dict = {"criterion" : ["gini", "entropy"], #default = gini
-                    "max_depth" : [None, 2, 3, 5, 7, 9, 12, 20], #default = None
+                    "max_depth" : [None, 2, 3, 5, 7, 9, 12, 20, 30], #default = None
                     "min_samples_split" : [2, 4, 6, 8, 10],
                     "min_samples_leaf" : [1, 2, 4, 6, 8]} #deafult = 2
         tree = DecisionTreeClassifier(random_state=11)
@@ -223,7 +223,7 @@ def simpleDecisionTree(showSearch=False, showValue=True):
 if __name__ == "__main__":
 
     logisticReg()
-    #simpleDecisionTree()
+    simpleDecisionTree()
     """
     df = get_df("covid_data.csv", n=10000, balance=True)
     # df = df.sample(n=10000, random_state=seed)
